@@ -1,0 +1,10 @@
+[package]
+name = "indago-agent-framework"
+description = "Indago agent framework — shared lifecycle and status reporting for tool and mode agents."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-protocol = { workspace = true }
+indago-bus = { workspace = true }

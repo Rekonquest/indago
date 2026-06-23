@@ -1,0 +1,52 @@
+import React, { Suspense, lazy } from 'react';
+import { Route, Routes } from 'react-router-dom';
+import { boundaryWrapper } from '../Error';
+
+const DeployCustomDashboards = lazy(() => import('./DeployCustomDashboard'));
+const DeployPlaybook = lazy(() => import('./DeployPlaybook'));
+const IngestionCsv = lazy(() => import('../data/IngestionCsv'));
+const IngestionTaxii = lazy(() => import('../data/IngestionTaxiis'));
+const IngestionRss = lazy(() => import('../data/IngestionRss'));
+const IngestionCatalogConnector = lazy(() => import('../data/IngestionCatalog/IngestionCatalogConnector'));
+const IngestionSync = lazy(() => import('../data/Sync'));
+
+const Root = () => {
+  return (
+    <Suspense>
+      <Routes>
+        <Route
+          path="/deploy-custom-dashboard/:serviceInstanceId/:fileId"
+          element={boundaryWrapper(DeployCustomDashboards)}
+        />
+        <Route
+          path="/deploy-playbook/:serviceInstanceId/:fileId"
+          element={boundaryWrapper(DeployPlaybook)}
+        />
+        <Route
+          path="/deploy-csv-feed/:serviceInstanceId/:fileId"
+          element={boundaryWrapper(IngestionCsv)}
+        />
+        {/* OpenCTI streams */}
+        <Route
+          path="/deploy-sync/:serviceInstanceId/:fileId"
+          element={boundaryWrapper(IngestionSync)}
+        />
+        {/* Query param: ?openConfig=true to auto-open deployment dialog */}
+        <Route
+          path="/deploy-connector/:connectorSlug"
+          element={boundaryWrapper(IngestionCatalogConnector)}
+        />
+        <Route
+          path="/deploy-taxii-feed/:serviceInstanceId/:fileId"
+          element={boundaryWrapper(IngestionTaxii)}
+        />
+        <Route
+          path="/deploy-rss-feed/:serviceInstanceId/:fileId"
+          element={boundaryWrapper(IngestionRss)}
+        />
+      </Routes>
+    </Suspense>
+  );
+};
+
+export default Root;

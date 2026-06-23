@@ -1,0 +1,19 @@
+[package]
+name = "indago-audit"
+description = "Indago audit — append-only, hash-chained, ed25519-signed tamper-evident log. A passive watcher: subscribes to the bus and records every meaningful action."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-protocol = { workspace = true }
+indago-bus = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+chrono = { workspace = true }
+sha2 = { workspace = true }
+ed25519-dalek = "2"
+getrandom = "0.2"

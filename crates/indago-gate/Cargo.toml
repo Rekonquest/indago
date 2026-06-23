@@ -1,0 +1,13 @@
+[package]
+name = "indago-gate"
+description = "Indago gate — the deterministic policy gate. Every CollectionRequest passes through here before execution. Agents propose; the gate disposes."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-protocol = { workspace = true }
+indago-bus = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }

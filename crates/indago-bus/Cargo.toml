@@ -1,0 +1,11 @@
+[package]
+name = "indago-bus"
+description = "Indago bus — a thin wrapper over a Tokio broadcast channel of IndagoMessage. The only channel between crates."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-protocol = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }

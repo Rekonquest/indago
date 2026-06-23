@@ -1,0 +1,10 @@
+C:\Projects\Indago\crates\indago-ui\target\debug\deps\poly1305-9357f30136c7a6e0.d: C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\poly1305-0.8.0\src\lib.rs C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\poly1305-0.8.0\src\backend.rs C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\poly1305-0.8.0\src\backend\avx2.rs C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\poly1305-0.8.0\src\backend\avx2\helpers.rs C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\poly1305-0.8.0\src\backend\autodetect.rs C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\poly1305-0.8.0\src\backend\soft.rs
+
+C:\Projects\Indago\crates\indago-ui\target\debug\deps\libpoly1305-9357f30136c7a6e0.rmeta: C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\poly1305-0.8.0\src\lib.rs C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\poly1305-0.8.0\src\backend.rs C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\poly1305-0.8.0\src\backend\avx2.rs C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\poly1305-0.8.0\src\backend\avx2\helpers.rs C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\poly1305-0.8.0\src\backend\autodetect.rs C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\poly1305-0.8.0\src\backend\soft.rs
+
+C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\poly1305-0.8.0\src\lib.rs:
+C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\poly1305-0.8.0\src\backend.rs:
+C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\poly1305-0.8.0\src\backend\avx2.rs:
+C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\poly1305-0.8.0\src\backend\avx2\helpers.rs:
+C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\poly1305-0.8.0\src\backend\autodetect.rs:
+C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\poly1305-0.8.0\src\backend\soft.rs:

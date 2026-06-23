@@ -1,0 +1,16 @@
+[package]
+name = "indago-collect-subdomain"
+description = "Indago subdomain collector — mechanism-only. Concurrent DNS brute-force over a wordlist; freezes resolved hosts and proposes them as entities/claims."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-core = { workspace = true }
+indago-protocol = { workspace = true }
+indago-bus = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+hickory-resolver = { workspace = true }

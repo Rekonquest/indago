@@ -1,0 +1,52 @@
+[package]
+name = "indago-ui"
+version = "0.1.0"
+edition = "2021"
+description = "Indago UI — the Servo engine embedded in-process as a self-renderer. A crate on the bus: renders the HTML/CSS/JS app and bridges bus state into the page. NOT a webview, NOT Tauri, NOT a separate process."
+
+# Own workspace: Servo's dependency tree is huge and version-pinned, so it is
+# isolated from the fast main Indago workspace (which `exclude`s this dir). The
+# servo build is opt-in via the `servo-engine` feature.
+[workspace]
+
+[[bin]]
+name = "indago-ui"
+path = "src/main.rs"
+
+[dependencies]
+indago-core = { path = "../indago-core" }
+indago-protocol = { path = "../indago-protocol" }
+indago-bus = { path = "../indago-bus" }
+indago-runtime = { path = "../indago-runtime" }
+serde_json = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tokio = { version = "1", features = ["full"] }
+
+# ── Servo self-renderer (heavy) — opt-in via `servo-engine` ──────────────────
+anyhow = { version = "1", optional = true }
+dpi = { version = "0.1", optional = true }
+embedder_traits = { version = "=0.3.0", package = "servo-embedder-traits", optional = true }
+euclid = { version = "0.22", optional = true }
+servo = { version = "=0.3.0", optional = true }
+surfman = { version = "0.12.3", features = ["chains", "sm-angle-default"], optional = true }
+url = { version = "2", optional = true }
+webrender_api = { version = "0.68", optional = true }
+winit = { version = "0.30.13", optional = true }
+
+[dev-dependencies]
+uuid = { version = "1", features = ["v4"] }
+
+[features]
+default = []
+servo-engine = [
+    "dep:anyhow",
+    "dep:dpi",
+    "dep:embedder_traits",
+    "dep:euclid",
+    "dep:servo",
+    "dep:surfman",
+    "dep:url",
+    "dep:webrender_api",
+    "dep:winit",
+]

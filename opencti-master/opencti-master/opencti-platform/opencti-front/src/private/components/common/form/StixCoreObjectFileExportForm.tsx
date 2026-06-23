@@ -1,0 +1,518 @@
+import Button from '@common/button/Button';
+import Dialog from '@common/dialog/Dialog';
+import EETooltip from '@components/common/entreprise_edition/EETooltip';
+import { CONTENT_MAX_MARKINGS_HELPERTEXT, CONTENT_MAX_MARKINGS_TITLE } from '@components/common/files/FileManager';
+import FiligranIcon from '@components/common/FiligranIcon';
+import ObjectMarkingField from '@components/common/form/ObjectMarkingField';
+import { BUILT_IN_FROM_TEMPLATE, BUILT_IN_HTML_TO_PDF } from '@components/common/stix_core_objects/StixCoreObjectFileExport';
+import { AbcOutlined, DataObjectOutlined, HtmlOutlined, NumbersOutlined } from '@mui/icons-material';
+import { Stack } from '@mui/material';
+import CardContent from '@mui/material/CardContent';
+import DialogActions from '@mui/material/DialogActions';
+import Grid from '@mui/material/Grid2';
+import MenuItem from '@mui/material/MenuItem';
+import Step from '@mui/material/Step';
+import StepButton from '@mui/material/StepButton';
+import StepLabel from '@mui/material/StepLabel';
+import Stepper from '@mui/material/Stepper';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
+import { LogoXtmOneIcon } from 'filigran-icon';
+import { Field, Form, Formik } from 'formik';
+import { FormikConfig } from 'formik/dist/types';
+import { FileExportOutline, FilePdfBox, InformationOutline, LanguageMarkdownOutline } from 'mdi-material-ui';
+import React, { useEffect, useState } from 'react';
+import * as Yup from 'yup';
+import AutocompleteField from '../../../../components/AutocompleteField';
+import Card from '../../../../components/common/card/Card';
+import SelectField from '../../../../components/fields/SelectField';
+import { useFormatter } from '../../../../components/i18n';
+import TextField from '../../../../components/TextField';
+import { FieldOption, fieldSpacingContainerStyle } from '../../../../utils/field';
+import useAI from '../../../../utils/hooks/useAI';
+import useEnterpriseEdition from '../../../../utils/hooks/useEnterpriseEdition';
+import { nowUTC } from '../../../../utils/Time';
+import { buildExportFileName, normalizeExportSourceEntityName } from './StixCoreObjectFileExportForm.utils';
+import FintelDesignField, { FintelDesignFieldOption } from './FintelDesignField';
+
+export type FileOption = Pick<FieldOption, 'label' | 'value'> & {
+  fileName?: string;
+  fileMarkings: {
+    id: string;
+    name: string;
+  }[];
+};
+
+export type ConnectorOption = FieldOption & {
+  connectorScope: readonly string[];
+};
+
+export interface StixCoreObjectFileExportFormInputs {
+  connector: ConnectorOption | null;
+  format: string;
+  type: string | null;
+  fileToExport: FileOption | null;
+  template: FieldOption | null;
+  exportFileName: string | null;
+  contentMaxMarkings: FieldOption[];
+  fileMarkings: FieldOption[];
+  fintelDesign: FintelDesignFieldOption | null;
+}
+
+export interface StixCoreObjectFileExportFormProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: FormikConfig<StixCoreObjectFileExportFormInputs>['onSubmit'];
+  connectors: ConnectorOption[];
+  templates?: FieldOption[];
+  fileOptions?: FileOption[];
+  defaultFileMarkings?: FieldOption[];
+  defaultValues?: {
+    connector: string;
+    format: string;
+    template?: string;
+    fileToExport?: string;
+    fintelDesign?: FintelDesignFieldOption;
+  };
+  scoName?: string;
+  handleOpenAskAi: () => void;
+  instanceType?: string | null | undefined;
+}
+
+export const renderIcon = (key: string) => {
+  switch (key) {
+    case 'ai':
+      return <FiligranIcon icon={LogoXtmOneIcon} size="large" />;
+    case 'application/pdf':
+      return <FilePdfBox fontSize="large" color="primary" />;
+    case 'application/json':
+    case 'application/vnd.mitre.navigator+json':
+    case 'application/vnd.oasis.stix+json':
+      return <DataObjectOutlined fontSize="large" color="primary" />;
+    case 'text/html':
+      return <HtmlOutlined fontSize="large" color="primary" />;
+    case 'text/markdown':
+      return <LanguageMarkdownOutline fontSize="large" color="primary" />;
+    case 'text/plain':
+      return <AbcOutlined fontSize="large" color="primary" />;
+    case 'text/csv':
+      return <NumbersOutlined fontSize="large" color="primary" />;
+
+    default:
+      return <FileExportOutline fontSize="large" color="primary" />;
+  }
+};
+
+const StixCoreObjectFileExportForm = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  connectors,
+  templates,
+  fileOptions,
+  defaultFileMarkings,
+  defaultValues,
+  scoName,
+  handleOpenAskAi,
+  instanceType,
+}: StixCoreObjectFileExportFormProps) => {
+  const { t_i18n } = useFormatter();
+  const isEnterpriseEdition = useEnterpriseEdition();
+  const { enabled, configured } = useAI();
+  const [stepIndex, setStepIndex] = useState(defaultValues?.format ? 1 : 0);
+  const [selectedContentMaxMarkingsIds, setSelectedContentMaxMarkingsIds] = useState<string[]>([]);
+  const isBuiltInConnector = (connector?: string) => [BUILT_IN_FROM_TEMPLATE.value, BUILT_IN_HTML_TO_PDF.value].includes(connector ?? '');
+
+  const handleSelectedContentMaxMarkingsChange = (
+    values: FieldOption[] | undefined,
+    setFieldValue: (field: string, value: unknown) => void,
+    fallbackFileMarkings: FieldOption[],
+  ) => {
+    const nextValues = values ?? [];
+    setSelectedContentMaxMarkingsIds(nextValues.map(({ value }) => value));
+    setFieldValue('fileMarkings', nextValues.length > 0 ? nextValues : fallbackFileMarkings);
+  };
+
+  const validation = () => Yup.object().shape({
+    connector: Yup.object().required(t_i18n('This field is required')),
+    format: Yup.string().trim().required(t_i18n('This field is required')),
+    type: Yup.string().nullable().when('connector', {
+      is: (val: ConnectorOption | null) => !isBuiltInConnector(val?.value),
+      then: (schema) => schema.required(t_i18n('This field is required')),
+    }),
+    template: Yup.object().nullable().when('connector', {
+      is: (val: ConnectorOption | null) => val?.value === BUILT_IN_FROM_TEMPLATE.value,
+      then: (schema) => schema.required(t_i18n('This field is required')),
+    }),
+    fintelDesigns: Yup.object().nullable(),
+    fileToExport: Yup.object().nullable().when('connector', {
+      is: (val: ConnectorOption | null) => val?.value === BUILT_IN_HTML_TO_PDF.value,
+      then: (schema) => schema.required(t_i18n('This field is required')),
+    }),
+    exportFileName: Yup.string().nullable().when('connector', {
+      is: (val: ConnectorOption | null) => isBuiltInConnector(val?.value),
+      then: (schema) => schema.required(t_i18n('This field is required')),
+    }),
+  });
+  const connectorScopes = Array.from(new Set(connectors.flatMap((c) => c.connectorScope ?? [])));
+  let defaultTemplate = templates?.find((t) => t.value === defaultValues?.template);
+  if (defaultValues?.connector === BUILT_IN_FROM_TEMPLATE.value && !defaultTemplate) {
+    [defaultTemplate] = templates ?? [];
+  }
+  const defaultFileToExport = fileOptions?.find((f) => f.value === defaultValues?.fileToExport);
+  let defaultFormat = '';
+  if (defaultValues?.format) {
+    defaultFormat = defaultValues.format;
+  } else if (connectorScopes.length > 0) {
+    defaultFormat = connectorScopes.includes('application/pdf') ? 'application/pdf' : connectorScopes[0];
+  }
+  const initialValues: StixCoreObjectFileExportFormInputs = {
+    connector: connectors.find((c) => c.value === defaultValues?.connector) ?? null,
+    format: defaultFormat,
+    type: null,
+    template: defaultTemplate ?? null,
+    fileToExport: defaultFileToExport ?? null,
+    exportFileName: null,
+    contentMaxMarkings: [],
+    fintelDesign: null,
+    fileMarkings: defaultFileToExport?.fileMarkings.map(({ id, name }) => ({ label: name, value: id }))
+      ?? defaultFileMarkings
+      ?? [],
+  };
+  const isConnectorValid = (option: ConnectorOption, selectedFormat: string) => {
+    if (!selectedFormat) return true;
+    const connector = connectors.find((c) => c.value === option.value);
+    return !!connector?.connectorScope?.includes(selectedFormat);
+  };
+  const selectFormat = (setFieldValue: (field: string, value: string) => void, scope: string) => {
+    setFieldValue('format', scope);
+    if (scope === 'ai') {
+      handleOpenAskAi();
+    } else {
+      setStepIndex(1);
+    }
+  };
+  const isContainer = ['Report', 'Case-Incident', 'Case-RFI'].includes(instanceType ?? 'Unknown');
+  return (
+    <Formik<StixCoreObjectFileExportFormInputs>
+      enableReinitialize={true}
+      initialValues={initialValues}
+      validationSchema={validation}
+      onSubmit={onSubmit}
+    >
+      {({ submitForm, handleReset, isSubmitting, setFieldValue, values }) => {
+        useEffect(() => {
+          if (values.connector !== null) {
+            const connector = connectors.find((c) => c.value === values.connector?.value);
+            const isCompatible = !!connector?.connectorScope?.includes(values.format);
+            if (!isCompatible) setFieldValue('connector', null);
+          }
+        }, [values.format]);
+
+        useEffect(() => {
+          if (values.format) {
+            const validConnectors = connectors.filter((c) => c.connectorScope?.includes(values.format));
+            if (validConnectors.length === 1 && !values.connector) {
+              setFieldValue('connector', validConnectors[0]);
+            }
+          }
+        }, [values.format, connectors, values.connector, setFieldValue]);
+
+        useEffect(() => {
+          const connector = values.connector?.value;
+          if (connector !== BUILT_IN_HTML_TO_PDF.value) setFieldValue('fileToExport', null);
+          if (connector !== BUILT_IN_FROM_TEMPLATE.value) setFieldValue('template', null);
+          if (!isBuiltInConnector(connector)) {
+            setFieldValue('exportFileName', null);
+          }
+          if (connector === BUILT_IN_HTML_TO_PDF.value && values.fileToExport === null) {
+            setFieldValue('fileToExport', (fileOptions ?? [])[0] ?? null);
+          }
+          if (connector === BUILT_IN_FROM_TEMPLATE.value && values.template === null) {
+            setFieldValue('template', (templates ?? [])[0] ?? null);
+          }
+        }, [values.connector]);
+
+        useEffect(() => {
+          if (values.template || values.fileToExport) {
+            const selectedEntityName = values.connector?.value === BUILT_IN_HTML_TO_PDF.value
+              ? (values.fileToExport?.value === 'mappableContent'
+                  ? scoName
+                  : normalizeExportSourceEntityName(values.fileToExport?.fileName))
+              : scoName;
+            setFieldValue('exportFileName', buildExportFileName({
+              entityName: selectedEntityName,
+              markings: values.fileMarkings,
+              utcIsoDate: nowUTC(),
+            }));
+          }
+        }, [values.template, values.fileToExport, values.fileMarkings, scoName, setFieldValue]);
+
+        useEffect(() => {
+          setSelectedContentMaxMarkingsIds((values.contentMaxMarkings ?? []).map(({ value }) => value));
+        }, [values.contentMaxMarkings]);
+
+        const shouldDisplayFintelDesign = (
+          (values.connector?.value === BUILT_IN_FROM_TEMPLATE.value && values.format === 'application/pdf')
+          || (values.connector?.value === BUILT_IN_HTML_TO_PDF.value && values.fileToExport?.value.startsWith('fromTemplate/'))
+        );
+
+        return (
+
+          <Dialog
+            open={isOpen}
+            onClose={() => {
+              handleReset();
+              onClose();
+            }}
+            data-testid="StixCoreObjectFileExportDialog"
+            title={(
+              <Stack direction="row" alignItems="center" gap={1}>
+                <Typography variant="h2" sx={{ margin: '0px!important' }}>
+                  {t_i18n('Generate an export')}
+                </Typography>
+                <Tooltip title={t_i18n('Your max shareable markings will be applied to the content max markings')}>
+                  <InformationOutline fontSize="small" color="primary" />
+                </Tooltip>
+              </Stack>
+            )}
+            size="large"
+          >
+            <Form>
+              <Stepper nonLinear activeStep={stepIndex} sx={{ marginY: 3 }}>
+                <Step>
+                  <StepButton
+                    onClick={() => setStepIndex(0)}
+                    disabled={stepIndex === 0}
+                  >
+                    <StepLabel>{t_i18n('Format')}</StepLabel>
+                  </StepButton>
+                </Step>
+                <Step>
+                  <StepButton
+                    onClick={() => setStepIndex(1)}
+                    disabled={stepIndex <= 1}
+                  >
+                    <StepLabel>{t_i18n('Form')}</StepLabel>
+                  </StepButton>
+                </Step>
+              </Stepper>
+
+              {stepIndex === 0 && (
+                <Grid
+                  container={true}
+                  spacing={3}
+                  style={{ marginTop: 0, marginBottom: 0 }}
+                >
+                  {connectorScopes.map((scope) => (
+                    <Grid key={scope} size={{ xs: 4 }}>
+                      <Card
+                        aria-label={t_i18n(scope)}
+                        onClick={() => selectFormat(setFieldValue, scope)}
+                        variant="outlined"
+                        sx={{
+                          textAlign: 'center',
+                          height: 150,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          p: 1,
+                        }}
+                      >
+                        <CardContent>
+                          {renderIcon(scope)}
+                          <Typography
+                            variant="body1"
+                            sx={{
+                              wordWrap: 'break-word',
+                              overflowWrap: 'break-word',
+                              wordBreak: 'break-word',
+                              mt: 1,
+                            }}
+                          >
+                            {t_i18n(scope)}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  ))}
+                  {isContainer && (enabled && configured) && (
+                    <Grid size={{ xs: 4 }}>
+                      <Card
+                        aria-label={t_i18n('Ask AI')}
+                        variant="outlined"
+                        onClick={() => (isEnterpriseEdition && (enabled && configured) ? selectFormat(setFieldValue, 'ai') : null)}
+                        sx={{
+                          textAlign: 'center',
+                          height: 150,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          p: 1,
+                        }}
+                      >
+                        <EETooltip forAi={true} title={t_i18n('Ask AI (multiple formats supported)')}>
+                          <CardContent sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                          }}
+                          >
+                            {renderIcon('ai')}
+                            <Typography
+                              variant="body1"
+                              sx={{
+                                wordWrap: 'break-word',
+                                overflowWrap: 'break-word',
+                                wordBreak: 'break-word',
+                                mt: 1,
+                              }}
+                            >
+                              {t_i18n('Ask AI (multiple formats supported)')}
+                            </Typography>
+                          </CardContent>
+                        </EETooltip>
+                      </Card>
+                    </Grid>
+                  )}
+                </Grid>
+              )}
+              {stepIndex === 1 && (
+                <>
+                  <Field
+                    component={AutocompleteField}
+                    name="connector"
+                    disabled={!values.format}
+                    fullWidth={true}
+                    style={fieldSpacingContainerStyle}
+                    options={connectors}
+                    getOptionDisabled={(option: ConnectorOption) => !isConnectorValid(option, values.format)}
+                    renderOption={(
+                      props: React.HTMLAttributes<HTMLLIElement>,
+                      option: FieldOption,
+                    ) => <li {...props}>{option.label}</li>}
+                    textfieldprops={{ label: t_i18n('Connector') }}
+                    optionLength={80}
+                  />
+                  {values.connector && (
+                    <>
+                      {values.connector.value === BUILT_IN_FROM_TEMPLATE.value && (
+                        <Field
+                          component={AutocompleteField}
+                          name="template"
+                          fullWidth={true}
+                          style={fieldSpacingContainerStyle}
+                          options={templates}
+                          renderOption={(
+                            props: React.HTMLAttributes<HTMLLIElement>,
+                            option: FieldOption,
+                          ) => <li {...props}>{option.label}</li>}
+                          textfieldprops={{ label: t_i18n('Template') }}
+                          optionLength={80}
+                        />
+                      )}
+                      {values.connector.value === BUILT_IN_HTML_TO_PDF.value && (
+                        <Field
+                          component={AutocompleteField}
+                          name="fileToExport"
+                          fullWidth={true}
+                          style={fieldSpacingContainerStyle}
+                          options={fileOptions}
+                          renderOption={(
+                            props: React.HTMLAttributes<HTMLLIElement>,
+                            option: FieldOption,
+                          ) => <li {...props}>{option.label}</li>}
+                          textfieldprops={{
+                            label: t_i18n('File to export'),
+                            helperText: t_i18n('A FINTEL export will contain extra information like markings and creation date'),
+                          }}
+                          optionLength={80}
+                        />
+                      )}
+                      {shouldDisplayFintelDesign && (
+                        <FintelDesignField
+                          name="fintelDesign"
+                          label={t_i18n('Fintel design')}
+                          style={fieldSpacingContainerStyle}
+                        />
+                      )}
+                      {!isBuiltInConnector(values.connector.value) && (
+                        <Field
+                          component={SelectField}
+                          variant="standard"
+                          name="type"
+                          aria-label="TYPE"
+                          label={t_i18n('Export type')}
+                          fullWidth={true}
+                          containerstyle={fieldSpacingContainerStyle}
+                        >
+                          <MenuItem value="simple">
+                            {t_i18n('Simple export (just the entity)')}
+                          </MenuItem>
+                          <MenuItem value="full">
+                            {t_i18n('Full export (entity and first neighbours)')}
+                          </MenuItem>
+                        </Field>
+                      )}
+                      {isBuiltInConnector(values.connector.value) && (
+                        <Field
+                          component={TextField}
+                          variant="standard"
+                          name="exportFileName"
+                          label={t_i18n('Export file name')}
+                          style={fieldSpacingContainerStyle}
+                        />
+                      )}
+                      {values.connector.value !== BUILT_IN_HTML_TO_PDF.value && (
+                        <ObjectMarkingField
+                          name="contentMaxMarkings"
+                          label={t_i18n(CONTENT_MAX_MARKINGS_TITLE)}
+                          onChange={(_, updatedValues) => handleSelectedContentMaxMarkingsChange(
+                            updatedValues,
+                            setFieldValue,
+                            defaultFileMarkings ?? [],
+                          )}
+                          style={fieldSpacingContainerStyle}
+                          setFieldValue={setFieldValue}
+                          limitToMaxSharing
+                          helpertext={t_i18n(CONTENT_MAX_MARKINGS_HELPERTEXT)}
+                        />
+                      )}
+                      <ObjectMarkingField
+                        name="fileMarkings"
+                        label={t_i18n('File marking definition levels')}
+                        filterTargetIds={selectedContentMaxMarkingsIds}
+                        style={fieldSpacingContainerStyle}
+                        setFieldValue={setFieldValue}
+                      />
+                    </>
+                  )}
+                </>
+              )}
+
+              <DialogActions>
+                <Button
+                  variant="secondary"
+                  disabled={isSubmitting}
+                  onClick={() => {
+                    handleReset();
+                    onClose();
+                  }}
+                >
+                  {t_i18n('Cancel')}
+                </Button>
+                <Button
+                  onClick={submitForm}
+                  disabled={isSubmitting || stepIndex === 0}
+                >
+                  {t_i18n('Create')}
+                </Button>
+              </DialogActions>
+            </Form>
+          </Dialog>
+        );
+      }}
+    </Formik>
+  );
+};
+
+export default StixCoreObjectFileExportForm;

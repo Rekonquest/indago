@@ -1,0 +1,12 @@
+[package]
+name = "indago-protocol"
+description = "Indago protocol — the constitution. Every bus message is a variant of IndagoMessage; message types are defined here and nowhere else."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-core = { workspace = true }
+serde = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }

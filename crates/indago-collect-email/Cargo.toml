@@ -1,0 +1,18 @@
+[package]
+name = "indago-collect-email"
+description = "Indago email collector — mechanism-only. Fetches a page, extracts and validates email addresses, freezes the result and proposes Email entities/claims."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-core = { workspace = true }
+indago-protocol = { workspace = true }
+indago-bus = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+reqwest = { workspace = true }
+regex = { workspace = true }
+email_address = { workspace = true }

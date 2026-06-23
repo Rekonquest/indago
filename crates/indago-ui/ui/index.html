@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Indago</title>
+<style>
+  /* Palette mirrors investigative-platform-v2.jsx */
+  :root{
+    --bg:#0c0e14; --s1:#12151e; --s2:#181c28; --s3:#1e2333; --s4:#252a3a;
+    --b1:#2a3045; --b2:#353d55; --b3:#1a1f2e;
+    --t1:#e2e5ec; --t2:#a0a8b8; --t3:#6b7490; --t4:#454e68;
+    --acc:#5b8def; --accBg:#1a2a4a;
+    --grn:#34d399; --grnBg:#0d2a20; --amb:#fbbf24; --ambBg:#2a2010;
+    --red:#f87171; --redBg:#2a1515; --pur:#a78bfa; --cyn:#22d3ee; --pink:#f472b6; --orange:#fb923c;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--t1);font-family:'Inter',-apple-system,system-ui,sans-serif;font-size:13px;overflow:hidden}
+  .app{display:flex;height:100vh;width:100vw}
+
+  /* Sidebar */
+  .sidebar{width:48px;background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column;align-items:center;padding-top:8px;gap:2px;flex-shrink:0}
+  .sidebar .logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--acc),var(--pur));display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;margin-bottom:8px}
+  .navbtn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--t4);background:none;border:none;border-radius:7px;cursor:pointer}
+  .navbtn:hover{color:var(--t2);background:var(--s2)}
+  .navbtn.active{color:var(--acc);background:var(--accBg)}
+  .sep{width:20px;height:1px;background:var(--b1);margin:4px 0}
+
+  /* Main */
+  .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  .topbar{height:42px;background:var(--s1);border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;padding:0 14px;flex-shrink:0}
+  .topbar .case{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px}
+  .dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+  .dot.live{background:var(--grn);box-shadow:0 0 6px var(--grn);animation:pulse 1.6s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .stats{display:flex;gap:16px;font-size:11px;color:var(--t3)}
+  .stats b{color:var(--t1);font-size:13px}
+
+  .content{flex:1;overflow:auto;padding:16px}
+  .viewhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .viewhead h2{font-size:15px;font-weight:600}
+  .viewhead .sub{font-size:11px;color:var(--t3)}
+
+  .view{display:none}
+  .view.active{display:block}
+
+  /* generic card list */
+  .row{background:var(--s1);border:1px solid var(--b1);border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;gap:10px;align-items:flex-start}
+  .row:hover{border-color:var(--b2);background:var(--s2)}
+  .mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+  .muted{color:var(--t3)}
+  .tiny{font-size:10px}
+  .grow{flex:1;min-width:0}
+  .ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  .badge{padding:2px 7px;border-radius:3px;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+  .b-corroborated{background:var(--grnBg);color:var(--grn)}
+  .b-asserted{background:var(--ambBg);color:var(--amb)}
+  .b-disputed{background:var(--redBg);color:var(--red)}
+  .b-retracted{background:var(--s2);color:var(--t4)}
+
+  .tag{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:3px;font-size:10px;font-weight:500;text-transform:capitalize}
+  .conf{display:flex;align-items:center;gap:6px;min-width:120px}
+  .bar{flex:1;height:4px;background:var(--b1);border-radius:2px;overflow:hidden}
+  .bar > i{display:block;height:100%;border-radius:2px}
+
+  .pill{font-size:9px;padding:1px 6px;border-radius:3px;background:var(--s3);color:var(--t3)}
+  .empty{color:var(--t4);font-size:12px;padding:24px;text-align:center}
+
+  /* agents / approvals */
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .approval{background:var(--ambBg);border:1px solid #fbbf2425;border-radius:6px;padding:10px;margin-bottom:6px}
+  .btn{border:1px solid var(--b1);background:transparent;color:var(--t2);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer}
+  .btn.primary{background:var(--acc);color:#fff;border:none}
+  .btn.go{background:var(--grn);color:#04130d;border:none;font-weight:600}
+
+  /* graph */
+  svg{width:100%;height:calc(100vh - 120px);background:var(--bg)}
+  text{font-family:inherit}
+  .feedtime{width:42px;flex-shrink:0;color:var(--t3);font-size:11px}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="sidebar">
+    <div class="logo">I</div>
+    <button class="navbtn active" data-view="activity" title="Activity">◷</button>
+    <button class="navbtn" data-view="graph" title="Graph">◉</button>
+    <button class="navbtn" data-view="claims" title="Claims">✓</button>
+    <button class="navbtn" data-view="evidence" title="Evidence">⊟</button>
+    <button class="navbtn" data-view="entities" title="Entities">≡</button>
+    <div class="sep"></div>
+    <button class="navbtn" data-view="agents" title="Agents">◈</button>
+  </nav>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="case"><span class="dot live"></span><span id="caseName">Indago</span>
+        <span class="muted tiny" id="conn">connecting…</span></div>
+      <div class="stats">
+        <span><b id="stEnt">0</b> entities</span>
+        <span><b id="stClaim">0</b> claims</span>
+        <span><b id="stEvid">0</b> evidence</span>
+        <span><b id="stAgent">0</b> agents</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Activity -->
+      <section class="view active" data-view="activity">
+        <div class="viewhead"><h2>Activity</h2><span class="sub">live bus feed</span></div>
+        <div id="activity"></div>
+      </section>
+
+      <!-- Graph -->
+      <section class="view" data-view="graph">
+        <div class="viewhead"><h2>Graph</h2><span class="sub">entities &amp; accepted claims</span></div>
+        <svg id="graph"></svg>
+      </section>
+
+      <!-- Claims -->
+      <section class="view" data-view="claims">
+        <div class="viewhead"><h2>Claims</h2><span class="sub" id="claimsSub"></span></div>
+        <div id="claims"></div>
+      </section>
+
+      <!-- Evidence -->
+      <section class="view" data-view="evidence">
+        <div class="viewhead"><h2>Evidence Vault</h2><span class="sub">content-addressed · append-only · tamper-evident</span></div>
+        <div id="evidence"></div>
+      </section>
+
+      <!-- Entities -->
+      <section class="view" data-view="entities">
+        <div class="viewhead"><h2>Entities</h2><span class="sub" id="entitiesSub"></span></div>
+        <div id="entities"></div>
+      </section>
+
+      <!-- Agents -->
+      <section class="view" data-view="agents">
+        <div class="viewhead"><h2>Agents &amp; Approvals</h2><span class="sub">propose · the gate disposes</span></div>
+        <div id="approvals"></div>
+        <div class="grid2" id="agents" style="margin-top:10px"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Entity-type colors (mirrors EC in the .jsx) ───────────────────────────
+const EC = {Person:"#5b8def",Company:"#a78bfa",Domain:"#22d3ee",Address:"#34d399",
+  Phone:"#fbbf24",Document:"#f87171",Email:"#f472b6",IpAddress:"#fb923c",
+  Asn:"#c084fc",Netblock:"#f59e0b",Location:"#34d399",Url:"#38bdf8",Username:"#f472b6",
+  Service:"#fbbf24",Other:"#6b7490"};
+const conf_color = v => v>=80?"var(--grn)":v>=50?"var(--amb)":"var(--red)";
+const esc = s => String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// ── State ─────────────────────────────────────────────────────────────────
+const S = {entities:new Map(), claims:new Map(), evidence:[], activity:[], agents:new Map(), approvals:[]};
+
+function stats(){
+  document.getElementById("stEnt").textContent = S.entities.size;
+  document.getElementById("stClaim").textContent = S.claims.size;
+  document.getElementById("stEvid").textContent = S.evidence.length;
+  document.getElementById("stAgent").textContent = S.agents.size;
+}
+
+// Resolve an entity reference (id or name) to a display name.
+const nameOf = v => { const e=S.entities.get(v); return e?e.name:v; };
+function tag(type){const c=EC[type]||EC.Other;return `<span class="tag" style="background:${c}22;color:${c}">${esc(type)}</span>`;}
+function badge(st){return `<span class="badge b-${(st||"asserted").toLowerCase()}">${esc(st)}</span>`;}
+function confbar(v){return `<span class="conf"><span class="bar"><i style="width:${v}%;background:${conf_color(v)}"></i></span><span class="tiny" style="color:${conf_color(v)}">${v}%</span></span>`;}
+
+// ── Renderers ───────────────────────────────────────────────────────────────
+function renderActivity(){
+  const el=document.getElementById("activity");
+  if(!S.activity.length){el.innerHTML='<div class="empty">No activity yet — start an investigation.</div>';return;}
+  el.innerHTML = S.activity.slice(-200).reverse().map(a=>`
+    <div class="row">
+      <span class="feedtime mono">${esc(a.time)}</span>
+      <span class="dot" style="background:${a.color||'var(--acc)'};margin-top:5px"></span>
+      <div class="grow"><span>${esc(a.text)}</span></div>
+    </div>`).join("");
+}
+function renderClaims(){
+  const el=document.getElementById("claims");
+  const arr=[...S.claims.values()];
+  document.getElementById("claimsSub").textContent = `${arr.length} claims`;
+  if(!arr.length){el.innerHTML='<div class="empty">No claims accepted yet.</div>';return;}
+  el.innerHTML = arr.slice().reverse().map(c=>`
+    <div class="row" style="flex-direction:column;gap:6px">
+      <div style="display:flex;justify-content:space-between;width:100%;gap:8px;align-items:center">
+        <div class="grow"><span style="color:var(--acc);font-weight:600">${esc(nameOf(c.subject))}</span>
+          <span class="muted"> ${esc(c.predicate)} </span>
+          <span style="color:var(--pur);font-weight:600">${esc(nameOf(c.object))}</span></div>
+        ${badge(c.status)}
+      </div>
+      <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
+        <span class="tiny muted">${c.sources} source${c.sources===1?'':'s'} · by ${esc(c.author)}</span>
+        ${confbar(c.confidence)}
+      </div>
+    </div>`).join("");
+}
+function renderEvidence(){
+  const el=document.getElementById("evidence");
+  if(!S.evidence.length){el.innerHTML='<div class="empty">No frozen evidence yet.</div>';return;}
+  const icon={WARC:"🌐",JSON:"📋",PNG:"📸",TXT:"📄",PDF:"📄"};
+  el.innerHTML = S.evidence.slice().reverse().map(e=>`
+    <div class="row">
+      <span style="font-size:18px">${icon[e.format]||"📎"}</span>
+      <div class="grow"><div class="ell">${esc(e.title)}</div>
+        <div class="tiny muted">${esc(e.captured||"")} · ${esc(e.format)} · ${esc(e.collector||"")}</div></div>
+      <div class="mono tiny muted" title="${esc(e.id)}">${esc((e.id||"").slice(0,16))}…</div>
+    </div>`).join("");
+}
+function renderEntities(){
+  const el=document.getElementById("entities");
+  const arr=[...S.entities.values()];
+  document.getElementById("entitiesSub").textContent = `${arr.length} entities`;
+  if(!arr.length){el.innerHTML='<div class="empty">No entities yet.</div>';return;}
+  el.innerHTML = arr.slice().reverse().map(e=>`
+    <div class="row"><div class="grow ell">${esc(e.name)}</div>${tag(e.type)}</div>`).join("");
+}
+function renderAgents(){
+  const ag=document.getElementById("agents");
+  const arr=[...S.agents.values()];
+  const sc={Running:"var(--grn)",Queued:"var(--amb)",Completed:"var(--acc)",Idle:"var(--t4)",Failed:"var(--red)"};
+  ag.innerHTML = arr.length? arr.map(a=>`
+    <div class="row" style="flex-direction:column;gap:6px;align-items:flex-start">
+      <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
+        <b>${esc(a.name)}</b>
+        <span style="display:flex;align-items:center;gap:5px"><span class="dot" style="background:${sc[a.status]||'var(--t4)'}"></span><span class="tiny muted">${esc(a.status)}</span></span>
+      </div>
+      <span class="tiny muted ell" style="width:100%">${esc(a.detail||"")}</span>
+    </div>`).join("") : '<div class="empty">No agents have reported yet.</div>';
+
+  const ap=document.getElementById("approvals");
+  ap.innerHTML = S.approvals.map(a=>`
+    <div class="approval">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+        <div class="grow"><div><b>${esc(a.capability)}</b> → <b>${esc(a.target)}</b></div>
+          <div class="tiny" style="color:var(--amb);margin-top:2px">⚠ ${esc(a.risk||"live external query")}</div></div>
+        <div style="display:flex;gap:4px"><button class="btn go" onclick="indago.respond('${a.request_id}',true)">Approve</button>
+          <button class="btn" onclick="indago.respond('${a.request_id}',false)">Deny</button></div>
+      </div>
+    </div>`).join("");
+}
+function renderGraph(){
+  const svg=document.getElementById("graph");
+  const ents=[...S.entities.entries()]; // [key(id|name), {name,type}]
+  if(!ents.length){svg.innerHTML='';return;}
+  const W=svg.clientWidth||900, H=svg.clientHeight||600, cx=W/2, cy=H/2, R=Math.min(W,H)/2-70;
+  const pos=new Map();
+  ents.forEach(([key],i)=>{const a=(i/ents.length)*Math.PI*2; pos.set(key,{x:cx+R*Math.cos(a),y:cy+R*Math.sin(a)});});
+  let edges="";
+  for(const c of S.claims.values()){const f=pos.get(c.subject),t=pos.get(c.object);if(f&&t)
+    edges+=`<line x1="${f.x}" y1="${f.y}" x2="${t.x}" y2="${t.y}" stroke="#2a304588" stroke-width="1"/>
+      <text x="${(f.x+t.x)/2}" y="${(f.y+t.y)/2-3}" fill="#6b7490" font-size="9" text-anchor="middle">${esc(c.predicate)}</text>`;}
+  let nodes="";
+  for(const [key,e] of ents){const p=pos.get(key),c=EC[e.type]||EC.Other;
+    nodes+=`<g><circle cx="${p.x}" cy="${p.y}" r="16" fill="${c}22" stroke="${c}" stroke-width="1.4"/>
+      <circle cx="${p.x}" cy="${p.y}" r="4" fill="${c}"/>
+      <text x="${p.x}" y="${p.y+30}" fill="#a0a8b8" font-size="10" text-anchor="middle">${esc(e.name.length>20?e.name.slice(0,18)+'…':e.name)}</text></g>`;}
+  svg.innerHTML = edges+nodes;
+}
+
+let activeView="activity";
+function renderActive(){({activity:renderActivity,graph:renderGraph,claims:renderClaims,
+  evidence:renderEvidence,entities:renderEntities,agents:renderAgents}[activeView]||renderActivity)();}
+function renderAll(){stats();renderActive();}
+
+// ── Nav ─────────────────────────────────────────────────────────────────────
+document.querySelectorAll(".navbtn").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".navbtn").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active");
+  activeView=b.dataset.view;
+  document.querySelector(`.view[data-view="${activeView}"]`).classList.add("active");
+  renderActive();
+});
+
+function pushActivity(text,color){
+  const d=new Date();
+  const time=`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+  S.activity.push({time,text,color});
+}
+
+// ── Bridge: the Servo embedder (Rust) calls window.indago.* ────────────────
+window.indago = {
+  connected(){document.getElementById("conn").textContent="● live";},
+  // The embedder calls this on load to clear the browser-preview demo seed.
+  reset(){window.__INDAGO_EMBEDDED__=true;S.entities.clear();S.claims.clear();
+    S.evidence.length=0;S.activity.length=0;S.agents.clear();S.approvals.length=0;renderAll();},
+  // Apply one bus event. `m` is {kind, ...fields}.
+  apply(m){
+    switch(m.kind){
+      case "collection_request": pushActivity(`request: ${m.capability} ${m.target}`, "var(--t3)"); break;
+      case "collection_approved": pushActivity(`gate approved ${m.capability} ${m.target}`, "var(--grn)"); break;
+      case "collection_denied": pushActivity(`gate denied: ${m.reason}`, "var(--red)"); break;
+      case "approval_request":
+        if(!S.approvals.find(a=>a.request_id===m.request_id)) S.approvals.push(m);
+        pushActivity(`approval requested: ${m.capability} ${m.target}`, "var(--amb)"); break;
+      case "approval_response":
+        S.approvals = S.approvals.filter(a=>a.request_id!==m.request_id); break;
+      case "evidence_stored":
+        S.evidence.push(m); pushActivity(`evidence frozen ${(m.id||'').slice(0,12)}… (${m.format})`, "var(--cyn)"); break;
+      case "entity_created":
+        S.entities.set(m.id||m.name, {name:m.name,type:m.type}); break;
+      case "claim_accepted":
+        S.claims.set(m.id, m); pushActivity(`claim ${m.status}: ${m.subject} ${m.predicate} ${m.object}`, "var(--acc)"); break;
+      case "agent_status":
+        S.agents.set(m.name, m); pushActivity(`[${m.name}] ${m.status} — ${m.detail||''}`, "var(--pur)"); break;
+      case "start_mode": pushActivity(`▶ ${m.mode} investigation: ${m.seed}`, "var(--pur)"); break;
+    }
+    renderAll();
+  },
+  setCase(name){document.getElementById("caseName").textContent=name;},
+  // page → Rust (overridden by the embedder; stubbed for browser preview)
+  respond(){}, command(){},
+};
+
+// Demo seed so the design renders in a plain browser preview. The embedder
+// calls indago.apply(...) with real bus events, which overlays live data.
+if(!window.__INDAGO_EMBEDDED__){
+  [["Domain","meridian-group.biz"],["IpAddress","185.234.10.20"],["Company","Meridian Holdings Ltd"],
+   ["Person","Marcus Webb"],["Email","m.webb@proton.me"],["Domain","www.meridian-group.biz"]]
+    .forEach(([type,name])=>S.entities.set(name,{name,type}));
+  S.claims.set("c1",{id:"c1",subject:"185.234.10.20",predicate:"Hosts",object:"meridian-group.biz",status:"Corroborated",confidence:95,sources:2,author:"indago-collect-dns"});
+  S.claims.set("c2",{id:"c2",subject:"meridian-group.biz",predicate:"registered by",object:"Marcus Webb",status:"Asserted",confidence:60,sources:1,author:"indago-extractor"});
+  S.evidence.push({id:"a3f2c8d19c01e4b7aa11bb22cc33",title:"DNS records — meridian-group.biz",format:"JSON",captured:"2026-06-19 04:02",collector:"indago-collect-dns"});
+  S.evidence.push({id:"b7e14a023d44f891ee55ff66",title:"WHOIS — meridian-group.biz",format:"TXT",captured:"2026-06-19 04:02",collector:"indago-collect-whois"});
+  S.agents.set("mode:DomainFootprint",{name:"mode:DomainFootprint",status:"Running",detail:"expanding www.meridian-group.biz"});
+  S.approvals.push({request_id:"a1",capability:"BreachCheck",target:"m.webb@proton.me",risk:"Live external query — HaveIBeenPwned"});
+  ["Session started","Corporate Registry agent returned 3 entities","claim c1 promoted to Corroborated"]
+    .forEach(t=>pushActivity(t,"var(--t3)"));
+}
+renderAll();
+window.indago.connected();
+</script>
+</body>
+</html>

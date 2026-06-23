@@ -1,0 +1,20 @@
+[package]
+name = "indago-store"
+description = "Indago store — content-addressed, write-once blob store plus a SQLite metadata index. The sole writer of persistence."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-core = { workspace = true }
+indago-protocol = { workspace = true }
+indago-bus = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+anyhow = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+parking_lot = { workspace = true }
+rusqlite = { workspace = true }
+sha2 = { workspace = true }
+uuid = { workspace = true }

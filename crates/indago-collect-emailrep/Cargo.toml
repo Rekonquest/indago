@@ -1,0 +1,16 @@
+[package]
+name = "indago-collect-emailrep"
+description = "Indago email-reputation collector — mechanism-only. Looks up an email on emailrep.io for reputation, breach exposure, and linked platforms; proposes platform entities."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-core = { workspace = true }
+indago-protocol = { workspace = true }
+indago-bus = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+reqwest = { workspace = true }

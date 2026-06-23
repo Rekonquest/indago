@@ -1,0 +1,12 @@
+[package]
+name = "indago-core"
+description = "Indago core domain types (Entity, Claim, Evidence, TimelineEvent) and pure logic. No IO, no bus."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }

@@ -1,0 +1,14 @@
+[package]
+name = "indago-collect-breach"
+description = "Indago breach collector — mechanism-only. Requests the HIBP credential from the vault, queries HaveIBeenPwned for an email, and freezes the result."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-core = { workspace = true }
+indago-protocol = { workspace = true }
+indago-bus = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+reqwest = { workspace = true }

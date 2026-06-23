@@ -1,0 +1,10 @@
+[package]
+name = "indago-report"
+description = "Indago report — pure rendering of a case (entities, claims, evidence) into a legally-defensible Markdown report with provenance. No IO, no bus."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-core = { workspace = true }
+chrono = { workspace = true }

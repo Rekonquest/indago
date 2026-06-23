@@ -1,0 +1,16 @@
+[package]
+name = "indago-collect-asn"
+description = "Indago ASN collector — mechanism-only. Expands an Autonomous System to its announced network prefixes via BGPView; proposes Netblock entities."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-core = { workspace = true }
+indago-protocol = { workspace = true }
+indago-bus = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+reqwest = { workspace = true }

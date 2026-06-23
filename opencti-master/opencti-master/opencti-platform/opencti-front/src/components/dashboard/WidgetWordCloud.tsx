@@ -1,0 +1,46 @@
+import React, { useMemo } from 'react';
+import { useTheme } from '@mui/styles';
+import ReactWordcloud, { Props } from 'react-wordcloud';
+import type { Theme } from '../Theme';
+import { colors } from '../../utils/Charts';
+import useDistributionGraphData from '../../utils/hooks/useDistributionGraphData';
+
+interface WidgetWordCloudProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: readonly any[];
+  groupBy: string;
+}
+
+const WidgetWordCloud = ({ data, groupBy }: WidgetWordCloudProps) => {
+  const theme = useTheme<Theme>();
+  const { buildWidgetWordCloudOption } = useDistributionGraphData();
+
+  const wordCloudData = useMemo(
+    () => buildWidgetWordCloudOption(data, groupBy),
+    [data, groupBy],
+  );
+
+  const options: Props['options'] = useMemo(() => {
+    const wordCloudColors = colors(theme.palette.mode === 'dark' ? 400 : 600);
+    return {
+      colors: wordCloudColors,
+      fontFamily: 'IBM Plex Sans',
+      spiral: 'rectangular',
+      rotations: 1,
+      rotationAngles: [0, 0],
+      deterministic: true,
+      fontSizes: [20, 50],
+      scale: 'log',
+    };
+  }, [theme]);
+
+  return (
+    <ReactWordcloud
+      words={wordCloudData}
+      minSize={[1, 1]}
+      options={options}
+    />
+  );
+};
+
+export default WidgetWordCloud;

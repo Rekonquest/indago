@@ -1,0 +1,22 @@
+[package]
+name = "indago-main"
+description = "Indago runtime entrypoint — builds the bus, starts subsystems, wires nothing else."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "indago"
+path = "src/main.rs"
+
+[dependencies]
+indago-core = { workspace = true }
+indago-protocol = { workspace = true }
+indago-bus = { workspace = true }
+indago-runtime = { workspace = true }
+indago-report = { workspace = true }      # case-report rendering
+indago-audit = { workspace = true }       # for the audit-log verifier in the smoke
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+uuid = { workspace = true }

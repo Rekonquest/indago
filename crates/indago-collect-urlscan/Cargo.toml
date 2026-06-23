@@ -1,0 +1,16 @@
+[package]
+name = "indago-collect-urlscan"
+description = "Indago urlscan.io collector — mechanism-only. Searches urlscan.io for a domain and proposes the scanned URLs, IPs, and ASNs as entities/claims."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-core = { workspace = true }
+indago-protocol = { workspace = true }
+indago-bus = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+reqwest = { workspace = true }

@@ -1,0 +1,34 @@
+[package]
+name = "indago-runtime"
+description = "Indago runtime wiring — opens the store and starts every subsystem on the bus. Shared by the headless `indago` binary and the Servo UI binary so the wiring lives in one place."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-bus = { workspace = true }
+indago-store = { workspace = true }
+indago-gate = { workspace = true }
+indago-claim-engine = { workspace = true }
+indago-extractor = { workspace = true }
+indago-audit = { workspace = true }
+indago-credential-store = { workspace = true }
+indago-mode-agents = { workspace = true }
+indago-collect-dns = { workspace = true }
+indago-collect-whois = { workspace = true }
+indago-collect-web = { workspace = true }
+indago-collect-cert = { workspace = true }
+indago-collect-username = { workspace = true }
+indago-collect-subdomain = { workspace = true }
+indago-collect-email = { workspace = true }
+indago-collect-breach = { workspace = true }
+indago-collect-ip = { workspace = true }
+indago-collect-wayback = { workspace = true }
+indago-collect-revip = { workspace = true }
+indago-collect-shodan = { workspace = true }
+indago-collect-favicon = { workspace = true }
+indago-collect-urlscan = { workspace = true }
+indago-collect-asn = { workspace = true }
+indago-collect-emailrep = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }

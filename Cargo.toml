@@ -1,0 +1,99 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/indago-protocol",
+    "crates/indago-bus",
+    "crates/indago-core",
+    "crates/indago-store",
+    "crates/indago-gate",
+    "crates/indago-claim-engine",
+    "crates/indago-extractor",
+    "crates/indago-audit",
+    "crates/indago-credential-store",
+    "crates/indago-agent-framework",
+    "crates/indago-mode-agents",
+    "crates/indago-runtime",
+    "crates/indago-collect-dns",
+    "crates/indago-collect-whois",
+    "crates/indago-collect-web",
+    "crates/indago-collect-cert",
+    "crates/indago-collect-username",
+    "crates/indago-collect-subdomain",
+    "crates/indago-collect-email",
+    "crates/indago-collect-breach",
+    "crates/indago-collect-ip",
+    "crates/indago-collect-wayback",
+    "crates/indago-collect-revip",
+    "crates/indago-collect-shodan",
+    "crates/indago-collect-favicon",
+    "crates/indago-collect-urlscan",
+    "crates/indago-collect-asn",
+    "crates/indago-collect-emailrep",
+    "crates/indago-report",
+    "crates/indago-main",
+]
+# Reference OSINT tools bundled in this repo are not Rust crates; keep cargo
+# from ever scanning them.
+exclude = [
+    "opencti-master",
+    "spiderfoot-master",
+    "theHarvester-master",
+    # indago-ui is its own workspace: Servo's heavy, version-pinned dependency
+    # tree is isolated from this workspace and only built with --features ui.
+    "crates/indago-ui",
+]
+
+[workspace.package]
+edition = "2021"
+version = "0.1.0"
+license = "MIT"
+
+[workspace.dependencies]
+# Shared third-party deps — versions mirror C:\projects\aedes-runtime where they overlap.
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+thiserror = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1", features = ["v4", "v5", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+parking_lot = "0.12"
+sha2 = "0.10"
+rusqlite = { version = "0.37", features = ["bundled"] }   # aligned with Servo's rusqlite so libsqlite3-sys unifies (single sqlite3 link)
+hickory-resolver = "0.24"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
+regex = "1"
+email_address = "0.2"
+
+# Internal crates.
+indago-core = { path = "crates/indago-core" }
+indago-protocol = { path = "crates/indago-protocol" }
+indago-bus = { path = "crates/indago-bus" }
+indago-store = { path = "crates/indago-store" }
+indago-gate = { path = "crates/indago-gate" }
+indago-claim-engine = { path = "crates/indago-claim-engine" }
+indago-extractor = { path = "crates/indago-extractor" }
+indago-audit = { path = "crates/indago-audit" }
+indago-credential-store = { path = "crates/indago-credential-store" }
+indago-agent-framework = { path = "crates/indago-agent-framework" }
+indago-mode-agents = { path = "crates/indago-mode-agents" }
+indago-runtime = { path = "crates/indago-runtime" }
+indago-collect-dns = { path = "crates/indago-collect-dns" }
+indago-collect-whois = { path = "crates/indago-collect-whois" }
+indago-collect-web = { path = "crates/indago-collect-web" }
+indago-collect-cert = { path = "crates/indago-collect-cert" }
+indago-collect-username = { path = "crates/indago-collect-username" }
+indago-collect-subdomain = { path = "crates/indago-collect-subdomain" }
+indago-collect-email = { path = "crates/indago-collect-email" }
+indago-collect-breach = { path = "crates/indago-collect-breach" }
+indago-collect-ip = { path = "crates/indago-collect-ip" }
+indago-collect-wayback = { path = "crates/indago-collect-wayback" }
+indago-collect-revip = { path = "crates/indago-collect-revip" }
+indago-collect-shodan = { path = "crates/indago-collect-shodan" }
+indago-collect-favicon = { path = "crates/indago-collect-favicon" }
+indago-collect-urlscan = { path = "crates/indago-collect-urlscan" }
+indago-collect-asn = { path = "crates/indago-collect-asn" }
+indago-collect-emailrep = { path = "crates/indago-collect-emailrep" }
+indago-report = { path = "crates/indago-report" }

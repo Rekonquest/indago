@@ -1,0 +1,15 @@
+[package]
+name = "indago-mode-agents"
+description = "Indago mode agents — investigation strategies that chain collectors. They emit sequences of CollectionRequest and react to discoveries; they propose, the gate disposes."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-core = { workspace = true }
+indago-protocol = { workspace = true }
+indago-bus = { workspace = true }
+indago-agent-framework = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }

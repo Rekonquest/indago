@@ -1,0 +1,13 @@
+[package]
+name = "indago-collect-whois"
+description = "Indago WHOIS collector — mechanism-only. Raw-socket WHOIS over the IANA referral chain; freezes the response as evidence."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-core = { workspace = true }
+indago-protocol = { workspace = true }
+indago-bus = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }

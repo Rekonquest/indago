@@ -1,0 +1,16 @@
+[package]
+name = "indago-collect-ip"
+description = "Indago IP-intelligence collector — mechanism-only. Geolocation, ASN, ISP, and reverse DNS via ip-api.com. Proposes Location/ASN entities and located-in / in-asn claims."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-core = { workspace = true }
+indago-protocol = { workspace = true }
+indago-bus = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+reqwest = { workspace = true }

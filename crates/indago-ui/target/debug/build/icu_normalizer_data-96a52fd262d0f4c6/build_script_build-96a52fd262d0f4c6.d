@@ -1,0 +1,5 @@
+C:\Projects\Indago\crates\indago-ui\target\debug\build\icu_normalizer_data-96a52fd262d0f4c6\build_script_build-96a52fd262d0f4c6.d: C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\icu_normalizer_data-2.2.0\build.rs
+
+C:\Projects\Indago\crates\indago-ui\target\debug\build\icu_normalizer_data-96a52fd262d0f4c6\build_script_build-96a52fd262d0f4c6.exe: C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\icu_normalizer_data-2.2.0\build.rs
+
+C:\Users\jgali\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\icu_normalizer_data-2.2.0\build.rs:

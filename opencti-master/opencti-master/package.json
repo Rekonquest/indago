@@ -1,0 +1,31 @@
+{
+  "name": "opencti",
+  "packageManager": "yarn@4.16.0+sha512.5374c94eb4ef6aa8188fb112f20c1aa6569f248d676c5e576e1fd2a1a4d8d87a96df65d9dfe1c2a0252cbe38bda46cf18d955005b81b43cc7607a5c9d56fd2b6",
+  "devDependencies": {
+    "nx": "22.7.5"
+  },
+  "scripts": {
+    "deps": "nx run-many --tuiAutoExit --target install",
+    "dev": "nx run-many --target dev",
+    "build": "nx run-many --tuiAutoExit --target build",
+    "test": "nx run-many --tuiAutoExit --target test,e2e",
+    "lint": "nx run-many --tuiAutoExit --target lint",
+    "graphql": "nx run-many --tuiAutoExit --target graphql",
+    "with-python-venv": "node scripts/with_python_virtual_env.mjs",
+    "deps:venv": "yarn with-python-venv yarn deps",
+    "build:venv": "yarn with-python-venv yarn build",
+    "dev:venv": "yarn with-python-venv yarn dev",
+    "test:venv": "yarn with-python-venv yarn test",
+    "build:ubi9": "nx run-many --tuiAutoExit --target build-ubi9",
+    "push:ubi9": "nx run-many --tuiAutoExit --target push-ubi9",
+    "renovate:dry-run": "LOG_LEVEL=debug yarn dlx renovate --dry-run --platform=local"
+  },
+  "resolutions": {
+    "axios": "1.17.0"
+  },
+  "dependenciesMeta": {
+    "nx": {
+      "built": false
+    }
+  }
+}

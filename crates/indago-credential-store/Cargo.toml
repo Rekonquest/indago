@@ -1,0 +1,18 @@
+[package]
+name = "indago-credential-store"
+description = "Indago credential store — per-case API-key vault, encrypted at rest with ChaCha20-Poly1305. Answers GetCredential requests; never logs secrets."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-protocol = { workspace = true }
+indago-bus = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+uuid = { workspace = true }
+chacha20poly1305 = "0.10"
+getrandom = "0.2"

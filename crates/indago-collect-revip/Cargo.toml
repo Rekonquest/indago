@@ -1,0 +1,14 @@
+[package]
+name = "indago-collect-revip"
+description = "Indago reverse-IP collector — mechanism-only. Finds domains co-hosted on an IP via HackerTarget. Proposes the co-hosted domains and shares-host claims."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-core = { workspace = true }
+indago-protocol = { workspace = true }
+indago-bus = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+reqwest = { workspace = true }

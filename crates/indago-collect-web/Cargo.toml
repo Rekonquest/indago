@@ -1,0 +1,16 @@
+[package]
+name = "indago-collect-web"
+description = "Indago web collector — mechanism-only. Fetches a URL with reqwest and freezes the response as a WARC/1.0 record (capture, don't query)."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-core = { workspace = true }
+indago-protocol = { workspace = true }
+indago-bus = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+reqwest = { workspace = true }

@@ -1,0 +1,280 @@
+import * as R from 'ramda';
+import semver from 'semver';
+import { isEmptyField } from '../../database/utils';
+import { AUTOMATION_MANAGER_USER, executionContext, isInternalUser, SYSTEM_USER } from '../../utils/access';
+import { getEntitiesListFromCache } from '../../database/cache';
+import type { AuthContext, AuthUser } from '../../types/user';
+import { ENTITY_TYPE_USER } from '../../schema/internalObject';
+import type { StixBundle, StixObject } from '../../types/stix-2-1-common';
+import { STIX_EXT_OCTI } from '../../types/stix-2-1-extensions';
+import { FunctionalError } from '../../config/errors';
+import { ENTITY_TYPE_IDENTITY_ORGANIZATION } from '../organization/organization-types';
+import type { FilterGroup, PlaybookAddNodeInput } from '../../generated/graphql';
+import { PLAYBOOK_INTERNAL_DATA_CRON } from './playbook-components';
+import { elFindByIds } from '../../database/engine';
+import { checkAndConvertFilters, type FiltersIdsFinder } from '../../utils/filtering/filtering-utils';
+import { isStixMatchFilterGroup, validateFilterGroupForStixMatch } from '../../utils/filtering/filtering-stix/stix-filtering';
+import { playbookBundleElementsToApply, type ComponentDefinition, type LinkDefinition, type NodeDefinition, type PlaybookBundleElementsToApply } from './playbook-types';
+import { logApp } from '../../config/conf';
+import { pushAll } from '../../utils/arrayUtil';
+import { PLAYBOOK_ACCESS_RESTRICTIONS_COMPONENT } from './components/access-restrictions-component';
+import { PLAYBOOK_CONTAINER_WRAPPER_COMPONENT } from './components/container-wrapper-component';
+import { PLAYBOOK_CREATE_INDICATOR_COMPONENT } from './components/create-indicator-component';
+import { PLAYBOOK_CREATE_OBSERVABLE_COMPONENT } from './components/create-observable-component';
+import { PLAYBOOK_MANIPULATE_KNOWLEDGE_COMPONENT } from './components/manipulate-knowledge-component';
+import { PLAYBOOK_REMOVE_ACCESS_RESTRICTIONS_COMPONENT } from './components/remove-access-restrictions-component';
+import { PLAYBOOK_SECURITY_COVERAGE_COMPONENT } from './components/security-coverage-component';
+import { PLAYBOOK_SHARING_COMPONENT } from './components/sharing-component';
+import { PLAYBOOK_UNSHARING_COMPONENT } from './components/unsharing-component';
+
+export const extractBundleBaseElement = (instanceId: string, bundle: StixBundle): StixObject => {
+  const baseData = bundle.objects.find((o) => o.id === instanceId);
+  if (!baseData) throw FunctionalError('Playbook base element no longer accessible');
+  return baseData;
+};
+
+export const isBundleElementInScope = (
+  bundleElement: StixObject,
+  applyToElements: PlaybookBundleElementsToApply,
+  mainElementId: string,
+): boolean => {
+  const all = applyToElements === playbookBundleElementsToApply.allElements.value;
+  const onlyMain = applyToElements === playbookBundleElementsToApply.onlyMain.value && bundleElement.id === mainElementId;
+  const exceptMain = applyToElements === playbookBundleElementsToApply.allExceptMain.value && bundleElement.id !== mainElementId;
+  return all || onlyMain || exceptMain;
+};
+
+/**
+ * Check if a STIX element is matching filters.
+ * If no filters, return true.
+ *
+ * @param context
+ * @param bundleElement STIX element to verify.
+ * @param filters Filters to apply.
+ * @returns True if matching filters.
+ */
+export const isBundleElementMatchFilters = async (
+  context: AuthContext,
+  bundleElement: StixObject,
+  filters: string | undefined,
+): Promise<boolean> => {
+  if (!filters || isEmptyField(filters)) return true;
+  const jsonFilters = JSON.parse(filters);
+  return isStixMatchFilterGroup(
+    context,
+    SYSTEM_USER,
+    bundleElement,
+    jsonFilters,
+  );
+};
+
+/**
+ * Filter an array of STIX elements.
+ * Return the same array if no filters given.
+ *
+ * @param context
+ * @param bundleElements Array of STIX elements to filter.
+ * @param filters Filters to apply.
+ * @returns Array of matching elements.
+ */
+export const filterBundleElements = async (
+  context: AuthContext,
+  bundleElements: StixObject[],
+  filters: string | undefined,
+): Promise<StixObject[]> => {
+  if (!filters || isEmptyField(filters)) return bundleElements;
+  const jsonFilters = JSON.parse(filters);
+  const filterResults = await Promise.all(
+    bundleElements.map((element) => isStixMatchFilterGroup(
+      context,
+      SYSTEM_USER,
+      element,
+      jsonFilters,
+    )),
+  );
+  return bundleElements.filter((_, i) => filterResults[i]);
+};
+
+/**
+ * Returns the list of all users authorized based on given members array.
+ *
+ * @param members Array of members.
+ * @param baseData Data from event.
+ * @param bundle Stix bundle transiting through playbook components.
+ * @returns List of users.
+ */
+export const convertMembersToUsers = async (
+  members: { value: string }[],
+  baseData: StixObject,
+  bundle: StixBundle,
+) => {
+  if (isEmptyField(members)) return [];
+  const platformUsers = await getEntitiesListFromCache<AuthUser>(
+    executionContext('playbook_components'),
+    AUTOMATION_MANAGER_USER,
+    ENTITY_TYPE_USER,
+  );
+
+  const membersIds: string[] = [];
+  members?.forEach((m) => {
+    if (m.value === 'AUTHOR') {
+      membersIds.push(baseData.extensions[STIX_EXT_OCTI].created_by_ref_id);
+    } else if (m.value === 'CREATORS') {
+      const creatorIds = baseData.extensions[STIX_EXT_OCTI].creator_ids;
+      pushAll(membersIds, creatorIds);
+    } else if (m.value === 'ASSIGNEES') {
+      const assigneeIds = baseData.extensions[STIX_EXT_OCTI].assignee_ids;
+      pushAll(membersIds, assigneeIds);
+    } else if (m.value === 'PARTICIPANTS') {
+      const participantIds = baseData.extensions[STIX_EXT_OCTI].participant_ids;
+      pushAll(membersIds, participantIds);
+    } else if (m.value === 'BUNDLE_ORGANIZATIONS') {
+      const bundleOrganizations = bundle.objects.filter((o) => o.extensions[STIX_EXT_OCTI].type === ENTITY_TYPE_IDENTITY_ORGANIZATION);
+      const bundleOrganizationsIds = bundleOrganizations.map((o) => o.extensions[STIX_EXT_OCTI].id);
+      pushAll(membersIds, bundleOrganizationsIds);
+    } else {
+      membersIds.push(m.value);
+    }
+  });
+
+  const users = platformUsers.filter((user) => {
+    if (isInternalUser(user)) return false;
+    const isDirectlyAuthorized = membersIds.includes(user.id);
+    const isAuthorizedByGroup = user.groups.some((g) => membersIds.includes(g.internal_id));
+    const isAuthorizedByOrganization = user.organizations.some((o) => membersIds.includes(o.internal_id));
+    return isDirectlyAuthorized || isAuthorizedByGroup || isAuthorizedByOrganization;
+  });
+  return R.uniqBy(R.prop('id'), users);
+};
+
+export const applyOperationFieldPatch = (element: StixObject, patchObject: {
+  key: string;
+  value: any[];
+  operation: 'add' | 'replace' | 'remove';
+}[]) => {
+  if (!element.extensions[STIX_EXT_OCTI].opencti_upsert_operations) {
+    element.extensions[STIX_EXT_OCTI].opencti_upsert_operations = [];
+  }
+  pushAll(element.extensions[STIX_EXT_OCTI].opencti_upsert_operations, patchObject);
+};
+
+export const deleteLinksAndAllChildren = (definition: ComponentDefinition, links: LinkDefinition[]) => {
+  // Resolve all nodes to delete
+  const linksToDelete = links;
+  const nodesToDelete = [] as NodeDefinition[];
+  let childrenLinks = [] as LinkDefinition[];
+  // Resolve children nodes
+  let childrenNodes = definition.nodes.filter((n) => links.map((o) => o.to.id).includes(n.id));
+  if (childrenNodes.length > 0) {
+    pushAll(nodesToDelete, childrenNodes);
+    childrenLinks = definition.links.filter((n) => childrenNodes.map((o) => o.id).includes(n.from.id));
+  }
+  while (childrenLinks.length > 0) {
+    pushAll(linksToDelete, childrenLinks);
+    // Resolve children nodes not already in nodesToDelete
+    childrenNodes = definition.nodes.filter((n) => linksToDelete.map((o) => o.to.id).includes(n.id) && !nodesToDelete.map((o) => o.id).includes(n.id));
+    if (childrenNodes.length > 0) {
+      pushAll(nodesToDelete, childrenNodes);
+
+      childrenLinks = definition.links.filter((n) => childrenNodes.map((o) => o.id).includes(n.from.id));
+    } else {
+      childrenLinks = [];
+    }
+    logApp.info('Delete links and children loop', { nodesToDelete, linksToDelete });
+  }
+  return {
+    nodes: definition.nodes.filter((n) => !nodesToDelete.map((o) => o.id).includes(n.id)),
+    links: definition.links.filter((n) => !linksToDelete.map((o) => o.id).includes(n.id)),
+  };
+};
+
+export const checkPlaybookFiltersAndBuildConfigWithCorrectFilters = async (
+  context: AuthContext,
+  user: AuthUser,
+  input: PlaybookAddNodeInput,
+  userId: string,
+) => {
+  if (!input.configuration) {
+    return '{}';
+  }
+  let stringifiedFilters;
+  const config = JSON.parse(input.configuration);
+  if (config.filters) {
+    const filterGroup = JSON.parse(config.filters) as FilterGroup;
+    if (input.component_id === PLAYBOOK_INTERNAL_DATA_CRON.id) {
+      const convertedFilters = await checkAndConvertFilters(context, user, filterGroup, userId, elFindByIds as FiltersIdsFinder, { noFiltersConvert: true });
+      stringifiedFilters = JSON.stringify(convertedFilters);
+    } else {
+      // our stix matching is currently limited, we need to validate the input filters
+      validateFilterGroupForStixMatch(filterGroup);
+      stringifiedFilters = config.filters;
+    }
+  }
+  return JSON.stringify({ ...config, filters: stringifiedFilters });
+};
+
+/**
+ * Update the playbook definition nodes to the new scope format.
+ * If the version is compatible, the nodes configuration is updated to use applyToElements.
+ * If no definition is provided, return undefined.
+ *
+ * @param playbookDefinition Stringified playbook definition to migrate.
+ * @param version Version of the platform that exported the playbook.
+ * @returns Updated stringified playbook definition, or the original if version is not compatible.
+ */
+export const MINIMAL_COMPATIBLE_SCOPE_VERSION = '7.260515.0';
+export const updateImportedPlaybookDefinitionScope = (playbookDefinition: string | undefined, version: string) => {
+  if (!playbookDefinition || semver.gt(version, MINIMAL_COMPATIBLE_SCOPE_VERSION)) {
+    return playbookDefinition;
+  }
+
+  const listOfScopedPlaybookComponents = [
+    PLAYBOOK_ACCESS_RESTRICTIONS_COMPONENT.id,
+    PLAYBOOK_CONTAINER_WRAPPER_COMPONENT.id,
+    PLAYBOOK_CREATE_INDICATOR_COMPONENT.id,
+    PLAYBOOK_CREATE_OBSERVABLE_COMPONENT.id,
+    PLAYBOOK_MANIPULATE_KNOWLEDGE_COMPONENT.id,
+    PLAYBOOK_REMOVE_ACCESS_RESTRICTIONS_COMPONENT.id,
+    PLAYBOOK_SECURITY_COVERAGE_COMPONENT.id,
+    PLAYBOOK_SHARING_COMPONENT.id,
+    PLAYBOOK_UNSHARING_COMPONENT.id,
+  ];
+
+  const parsedPlaybookDefinition: ComponentDefinition = JSON.parse(playbookDefinition);
+
+  const updateNode = (node: NodeDefinition) => {
+    const configuration = JSON.parse(node.configuration);
+    const { all, excludeMainElement, ...restOfConfig } = configuration;
+
+    let finalConfig;
+
+    if (!listOfScopedPlaybookComponents.includes(node.component_id)) {
+      finalConfig = configuration;
+    } else if (configuration?.applyToElements) {
+      finalConfig = restOfConfig;
+    } else if (all === true) {
+      finalConfig = {
+        ...restOfConfig,
+        applyToElements: node.component_id === PLAYBOOK_CONTAINER_WRAPPER_COMPONENT.id && excludeMainElement
+          ? playbookBundleElementsToApply.allExceptMain.value
+          : playbookBundleElementsToApply.allElements.value,
+      };
+    } else {
+      finalConfig = {
+        ...restOfConfig,
+        applyToElements: playbookBundleElementsToApply.onlyMain.value,
+      };
+    }
+
+    return {
+      ...node,
+      configuration: JSON.stringify(finalConfig),
+    };
+  };
+  const nodes = parsedPlaybookDefinition.nodes.map((node: any) => updateNode(node));
+  const finalPlaybookDefinition = JSON.stringify({
+    ...parsedPlaybookDefinition,
+    nodes,
+  });
+  return finalPlaybookDefinition;
+};

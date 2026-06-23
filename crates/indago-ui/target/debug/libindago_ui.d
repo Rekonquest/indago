@@ -1,0 +1,1 @@
+C:\Projects\Indago\crates\indago-ui\target\debug\libindago_ui.rlib: C:\Projects\Indago\crates\indago-bus\src\lib.rs C:\Projects\Indago\crates\indago-core\src\lib.rs C:\Projects\Indago\crates\indago-protocol\src\lib.rs C:\Projects\Indago\crates\indago-ui\src\lib.rs C:\Projects\Indago\crates\indago-ui\ui\index.html

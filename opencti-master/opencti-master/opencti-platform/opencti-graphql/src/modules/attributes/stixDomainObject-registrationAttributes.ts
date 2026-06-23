@@ -1,0 +1,354 @@
+import * as R from 'ramda';
+import {
+  aliases,
+  type AttributeDefinition,
+  authorizedMembers,
+  authorizedMembersActivationDate,
+  confidence,
+  created,
+  entityLocationType,
+  files,
+  iAliasedIds,
+  type IdAttribute,
+  identityClass,
+  lang,
+  modified,
+  revoked,
+  xOpenctiAliases,
+  xOpenctiModifiedAt,
+  xOpenctiReliability,
+} from '../../schema/attribute-definition';
+import { schemaAttributesDefinition } from '../../schema/schema-attributes';
+import { ABSTRACT_STIX_DOMAIN_OBJECT, ENTITY_TYPE_CONTAINER, ENTITY_TYPE_IDENTITY, ENTITY_TYPE_LOCATION, ENTITY_TYPE_THREAT_ACTOR } from '../../schema/general';
+import {
+  ENTITY_TYPE_ATTACK_PATTERN,
+  ENTITY_TYPE_CAMPAIGN,
+  ENTITY_TYPE_CONTAINER_NOTE,
+  ENTITY_TYPE_CONTAINER_OBSERVED_DATA,
+  ENTITY_TYPE_CONTAINER_OPINION,
+  ENTITY_TYPE_CONTAINER_REPORT,
+  ENTITY_TYPE_COURSE_OF_ACTION,
+  ENTITY_TYPE_IDENTITY_INDIVIDUAL,
+  ENTITY_TYPE_IDENTITY_SECTOR,
+  ENTITY_TYPE_IDENTITY_SYSTEM,
+  ENTITY_TYPE_INCIDENT,
+  ENTITY_TYPE_INFRASTRUCTURE,
+  ENTITY_TYPE_INTRUSION_SET,
+  ENTITY_TYPE_LOCATION_CITY,
+  ENTITY_TYPE_LOCATION_COUNTRY,
+  ENTITY_TYPE_LOCATION_POSITION,
+  ENTITY_TYPE_LOCATION_REGION,
+  ENTITY_TYPE_MALWARE,
+  ENTITY_TYPE_THREAT_ACTOR_GROUP,
+  ENTITY_TYPE_TOOL,
+  ENTITY_TYPE_VULNERABILITY,
+} from '../../schema/stixDomainObject';
+import { CVSS_SEVERITY_VALUES } from '../../domain/vulnerability';
+import { ENTITY_TYPE_PIR } from '../pir/pir-types';
+import { ENTITY_TYPE_STATUS } from '../../schema/internalObject';
+import { X_WORKFLOW_ID } from '../../schema/identifier';
+import { DefaultFormating } from '../../utils/humanize';
+import type { BasicWorkflowStatus } from '../../types/store';
+
+export const workflowId: IdAttribute = {
+  name: X_WORKFLOW_ID,
+  label: 'Workflow status',
+  type: 'string',
+  format: 'id',
+  entityTypes: [ENTITY_TYPE_STATUS],
+  mandatoryType: 'no',
+  editDefault: false,
+  multiple: false,
+  upsert: true,
+  isFilterable: false,
+  attrRawIds: async (item, getEntitiesMapFromCache) => {
+    const platformStatuses = await getEntitiesMapFromCache<BasicWorkflowStatus>(ENTITY_TYPE_STATUS);
+    const templateId = platformStatuses.get(item)?.template_id;
+    return templateId ? [{ id: templateId, source: item }] : [];
+  },
+  representative: (item, translate, _ = DefaultFormating): string => {
+    return translate[item];
+  },
+};
+
+const stixDomainObjectAttributes: Array<AttributeDefinition<any>> = [
+  created,
+  modified,
+  xOpenctiModifiedAt,
+  lang,
+  confidence,
+  revoked,
+  files,
+  { name: 'x_opencti_graph_data', label: 'Graph data', type: 'string', format: 'text', mandatoryType: 'no', editDefault: false, multiple: false, upsert: false, isFilterable: false },
+  workflowId,
+  {
+    name: 'pir_information',
+    label: 'PIR information',
+    type: 'object',
+    format: 'nested',
+    editDefault: false,
+    mandatoryType: 'internal',
+    multiple: true,
+    upsert: false,
+    isFilterable: false,
+    mappings: [
+      { name: 'pir_id', label: 'PIR ID', type: 'string', format: 'id', entityTypes: [ENTITY_TYPE_PIR], editDefault: false, mandatoryType: 'no', multiple: false, upsert: true, isFilterable: true },
+      { name: 'pir_score', label: 'PIR Score', type: 'numeric', precision: 'integer', editDefault: false, mandatoryType: 'no', multiple: false, upsert: true, isFilterable: true },
+      { name: 'last_pir_score_date', label: 'Last score evolution', type: 'date', editDefault: false, mandatoryType: 'no', multiple: false, upsert: true, isFilterable: true },
+    ],
+  },
+];
+schemaAttributesDefinition.registerAttributes(ABSTRACT_STIX_DOMAIN_OBJECT, stixDomainObjectAttributes);
+
+const stixDomainObjectIdentityAttributes: Array<AttributeDefinition> = [
+  { name: 'name', label: 'Name', type: 'string', format: 'short', mandatoryType: 'external', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+  { name: 'description', label: 'Description', type: 'string', format: 'text', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+  { name: 'contact_information', label: 'Contact information', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+  { name: 'roles', label: 'Roles', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: true, upsert: false, isFilterable: false },
+  identityClass,
+];
+schemaAttributesDefinition.registerAttributes(ENTITY_TYPE_IDENTITY, stixDomainObjectIdentityAttributes);
+
+const stixDomainObjectLocationAttributes: Array<AttributeDefinition> = [
+  { name: 'name', label: 'Name', type: 'string', format: 'short', mandatoryType: 'external', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+  { name: 'description', label: 'Description', type: 'string', format: 'text', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+  { name: 'latitude', label: 'Latitude', type: 'numeric', precision: 'float', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: false },
+  { name: 'longitude', label: 'Longitude', type: 'numeric', precision: 'float', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: false },
+  { name: 'precision', label: 'Precision', type: 'numeric', precision: 'float', mandatoryType: 'no', editDefault: false, multiple: false, upsert: false, isFilterable: false },
+  entityLocationType,
+];
+schemaAttributesDefinition.registerAttributes(ENTITY_TYPE_LOCATION, stixDomainObjectLocationAttributes);
+
+const stixDomainObjectContainerAttributes: Array<AttributeDefinition> = [];
+schemaAttributesDefinition.registerAttributes(ENTITY_TYPE_CONTAINER, stixDomainObjectContainerAttributes);
+
+const stixDomainObjectsAttributes: { [k: string]: Array<AttributeDefinition<any>> } = {
+  [ENTITY_TYPE_ATTACK_PATTERN]: [
+    aliases,
+    iAliasedIds,
+    { name: 'name', label: 'Name', type: 'string', format: 'short', mandatoryType: 'external', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'description', label: 'Description', type: 'string', format: 'text', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_mitre_platforms', label: 'Platforms', type: 'string', format: 'vocabulary', vocabularyCategory: 'platforms_ov', mandatoryType: 'no', editDefault: false, multiple: true, upsert: true, isFilterable: true },
+    { name: 'x_mitre_permissions_required', label: 'Permissions required', type: 'string', format: 'vocabulary', vocabularyCategory: 'permissions_ov', mandatoryType: 'no', editDefault: false, multiple: true, upsert: true, isFilterable: true },
+    { name: 'x_mitre_detection', label: 'Detection', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_mitre_id', label: 'External ID', type: 'string', format: 'short', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: false },
+  ],
+  [ENTITY_TYPE_CAMPAIGN]: [
+    aliases,
+    iAliasedIds,
+    { name: 'name', label: 'Name', type: 'string', format: 'short', mandatoryType: 'external', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'description', label: 'Description', type: 'string', format: 'text', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'first_seen', label: 'First seen', type: 'date', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'last_seen', label: 'Last seen', type: 'date', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'objective', label: 'Objective', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: false, isFilterable: true },
+  ],
+  [ENTITY_TYPE_CONTAINER_NOTE]: [
+    { ...created, mandatoryType: 'external', editDefault: true },
+    { name: 'attribute_abstract', label: 'Abstract', type: 'string', format: 'short', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'content', label: 'Content', type: 'string', format: 'short', mandatoryType: 'external', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'authors', label: 'Authors', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: true, upsert: false, isFilterable: false },
+    { name: 'note_types', label: 'Note types', type: 'string', format: 'vocabulary', vocabularyCategory: 'note_types_ov', mandatoryType: 'customizable', editDefault: true, multiple: true, upsert: true, isFilterable: true },
+    { name: 'likelihood', label: 'Likelihood', type: 'numeric', precision: 'integer', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'content_mapping', label: 'Content mapping', type: 'string', format: 'text', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: false },
+  ],
+  [ENTITY_TYPE_CONTAINER_OBSERVED_DATA]: [
+    { name: 'first_observed', label: 'First observed', type: 'date', mandatoryType: 'external', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'last_observed', label: 'Last observed', type: 'date', mandatoryType: 'external', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'number_observed', label: 'Number observed', type: 'numeric', precision: 'integer', mandatoryType: 'external', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'content', label: 'Content', type: 'string', format: 'short', mandatoryType: 'no', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'content_mapping', label: 'Content mapping', type: 'string', format: 'text', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: false },
+  ],
+  [ENTITY_TYPE_CONTAINER_OPINION]: [
+    { name: 'explanation', label: 'Explanation', type: 'string', format: 'short', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'authors', label: 'Authors', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: true, upsert: false, isFilterable: false },
+    { name: 'opinion', label: 'Opinion', type: 'string', format: 'vocabulary', vocabularyCategory: 'opinion_ov', mandatoryType: 'external', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'content', label: 'Content', type: 'string', format: 'short', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'content_mapping', label: 'Content mapping', type: 'string', format: 'text', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: false },
+  ],
+  [ENTITY_TYPE_CONTAINER_REPORT]: [
+    { name: 'name', label: 'Name', type: 'string', format: 'short', mandatoryType: 'external', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'description', label: 'Description', type: 'string', format: 'text', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'report_types', label: 'Report types', type: 'string', format: 'vocabulary', vocabularyCategory: 'report_types_ov', mandatoryType: 'customizable', editDefault: true, multiple: true, upsert: true, isFilterable: true },
+    xOpenctiReliability,
+    { name: 'published', label: 'Report publication date', type: 'date', mandatoryType: 'external', editDefault: true, multiple: false, upsert: false, isFilterable: true },
+    { name: 'content', label: 'Content', type: 'string', format: 'short', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'content_mapping', label: 'Content mapping', type: 'string', format: 'text', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: false },
+    { ...authorizedMembers, editDefault: true },
+    { ...authorizedMembersActivationDate },
+  ],
+  [ENTITY_TYPE_COURSE_OF_ACTION]: [
+    xOpenctiAliases,
+    iAliasedIds,
+    { name: 'name', label: 'Name', type: 'string', format: 'short', mandatoryType: 'external', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'description', label: 'Description', type: 'string', format: 'text', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_mitre_id', label: 'External ID', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_threat_hunting', label: 'Threat hunting', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_log_sources', label: 'Log sources', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: true, upsert: true, isFilterable: true },
+  ],
+  [ENTITY_TYPE_IDENTITY_INDIVIDUAL]: [
+    xOpenctiAliases,
+    iAliasedIds,
+    xOpenctiReliability,
+    { name: 'x_opencti_firstname', label: 'Firstname', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: false, isFilterable: false },
+    { name: 'x_opencti_lastname', label: 'Lastname', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: false, isFilterable: false },
+  ],
+  [ENTITY_TYPE_IDENTITY_SECTOR]: [
+    xOpenctiAliases,
+    iAliasedIds,
+  ],
+  [ENTITY_TYPE_IDENTITY_SYSTEM]: [
+    xOpenctiAliases,
+    iAliasedIds,
+    xOpenctiReliability,
+  ],
+  [ENTITY_TYPE_INFRASTRUCTURE]: [
+    aliases,
+    iAliasedIds,
+    { name: 'name', label: 'Name', type: 'string', format: 'short', mandatoryType: 'external', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'description', label: 'Description', type: 'string', format: 'text', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'infrastructure_types', label: 'Infrastructure types', type: 'string', format: 'vocabulary', vocabularyCategory: 'infrastructure_type_ov', mandatoryType: 'customizable', editDefault: true, multiple: true, upsert: false, isFilterable: true },
+    { name: 'first_seen', label: 'First seen', type: 'date', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: false, isFilterable: true },
+    { name: 'last_seen', label: 'Last seen', type: 'date', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: false, isFilterable: true },
+  ],
+  [ENTITY_TYPE_INTRUSION_SET]: [
+    aliases,
+    iAliasedIds,
+    { name: 'name', label: 'Name', type: 'string', format: 'short', mandatoryType: 'external', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'description', label: 'Description', type: 'string', format: 'text', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'first_seen', label: 'First seen', type: 'date', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'last_seen', label: 'Last seen', type: 'date', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'goals', label: 'Goals', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: true, upsert: true, isFilterable: true },
+    { name: 'resource_level', label: 'Resource level', type: 'string', format: 'vocabulary', vocabularyCategory: 'attack_resource_level_ov', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'primary_motivation', label: 'Primary motivation', type: 'string', format: 'vocabulary', vocabularyCategory: 'attack_motivation_ov', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'secondary_motivations', label: 'Secondary motivation', type: 'string', format: 'vocabulary', vocabularyCategory: 'attack_motivation_ov', mandatoryType: 'no', editDefault: false, multiple: true, upsert: true, isFilterable: true },
+  ],
+  [ENTITY_TYPE_LOCATION_CITY]: [
+    xOpenctiAliases,
+    iAliasedIds,
+  ],
+  [ENTITY_TYPE_LOCATION_COUNTRY]: [
+    xOpenctiAliases,
+    iAliasedIds,
+  ],
+  [ENTITY_TYPE_LOCATION_REGION]: [
+    xOpenctiAliases,
+    iAliasedIds,
+  ],
+  [ENTITY_TYPE_LOCATION_POSITION]: [
+    xOpenctiAliases,
+    iAliasedIds,
+    { name: 'postal_code', label: 'Postal code', type: 'string', format: 'short', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: false, isFilterable: true },
+    { name: 'street_address', label: 'Street address', type: 'string', format: 'short', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: false, isFilterable: true },
+  ],
+  [ENTITY_TYPE_MALWARE]: [
+    aliases,
+    iAliasedIds,
+    { name: 'name', label: 'Name', type: 'string', format: 'short', mandatoryType: 'external', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'description', label: 'Description', type: 'string', format: 'text', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'malware_types', label: 'Malware types', type: 'string', format: 'vocabulary', vocabularyCategory: 'malware_type_ov', mandatoryType: 'customizable', editDefault: true, multiple: true, upsert: true, isFilterable: true },
+    { name: 'is_family', label: 'Is family', type: 'boolean', mandatoryType: 'external', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'first_seen', label: 'First seen', type: 'date', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'last_seen', label: 'Last seen', type: 'date', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'architecture_execution_envs', label: 'Architecture execution env.', type: 'string', format: 'vocabulary', vocabularyCategory: 'processor_architecture_ov', mandatoryType: 'customizable', editDefault: true, multiple: true, upsert: true, isFilterable: true },
+    { name: 'implementation_languages', label: 'Implementation languages', type: 'string', format: 'vocabulary', vocabularyCategory: 'implementation_language_ov', mandatoryType: 'customizable', editDefault: true, multiple: true, upsert: true, isFilterable: true },
+    { name: 'capabilities', label: 'Capabilities', type: 'string', format: 'vocabulary', vocabularyCategory: 'malware_capabilities_ov', mandatoryType: 'no', editDefault: false, multiple: true, upsert: false, isFilterable: true },
+  ],
+  [ENTITY_TYPE_THREAT_ACTOR_GROUP]: [
+    iAliasedIds,
+    aliases,
+    { name: 'name', label: 'Name', type: 'string', format: 'short', mandatoryType: 'external', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'description', label: 'Description', type: 'string', format: 'text', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'threat_actor_types', label: 'Threat actor types', format: 'vocabulary', type: 'string', vocabularyCategory: 'threat_actor_group_type_ov', mandatoryType: 'customizable', editDefault: true, multiple: true, upsert: false, isFilterable: true },
+    { name: 'first_seen', label: 'First seen', type: 'date', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'last_seen', label: 'Last seen', type: 'date', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'goals', label: 'Goals', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: true, upsert: true, isFilterable: true },
+    { name: 'roles', label: 'Roles', type: 'string', format: 'vocabulary', vocabularyCategory: 'threat_actor_group_role_ov', mandatoryType: 'no', editDefault: false, multiple: true, upsert: true, isFilterable: true },
+    { name: 'sophistication', label: 'Sophistication', format: 'vocabulary', type: 'string', vocabularyCategory: 'threat_actor_group_sophistication_ov', mandatoryType: 'no', editDefault: false, multiple: false, upsert: false, isFilterable: true },
+    { name: 'resource_level', label: 'Resource level', type: 'string', format: 'vocabulary', vocabularyCategory: 'attack_resource_level_ov', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'primary_motivation', label: 'Primary motivation', type: 'string', format: 'vocabulary', vocabularyCategory: 'attack_motivation_ov', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'secondary_motivations', label: 'Secondary motivation', type: 'string', format: 'vocabulary', vocabularyCategory: 'attack_motivation_ov', mandatoryType: 'no', editDefault: false, multiple: true, upsert: true, isFilterable: true },
+    { name: 'personal_motivations', label: 'Personal motivation', type: 'string', format: 'vocabulary', vocabularyCategory: 'attack_motivation_ov', mandatoryType: 'no', editDefault: false, multiple: true, upsert: false, isFilterable: false },
+  ],
+  [ENTITY_TYPE_THREAT_ACTOR]: [],
+  [ENTITY_TYPE_TOOL]: [
+    iAliasedIds,
+    aliases,
+    { name: 'name', label: 'Name', type: 'string', format: 'short', mandatoryType: 'external', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'description', label: 'Description', type: 'string', format: 'text', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'tool_types', label: 'Tool types', type: 'string', format: 'vocabulary', vocabularyCategory: 'tool_types_ov', mandatoryType: 'customizable', editDefault: true, multiple: true, upsert: false, isFilterable: true },
+    { name: 'tool_version', label: 'Tool version', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: false, isFilterable: true },
+  ],
+  [ENTITY_TYPE_VULNERABILITY]: [
+    iAliasedIds,
+    xOpenctiAliases,
+    { name: 'name', label: 'Name', type: 'string', format: 'short', mandatoryType: 'external', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'description', label: 'Description', type: 'string', format: 'text', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    // CVSS 3
+    { name: 'x_opencti_cvss_vector_string', label: 'CVSS3 Vector', type: 'string', format: 'short', mandatoryType: 'no', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_base_score', label: 'CVSS3 Score', type: 'numeric', precision: 'float', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_base_severity', label: 'CVSS3 Severity', type: 'string', format: 'enum', values: CVSS_SEVERITY_VALUES, mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_attack_vector', label: 'CVSS3 Attack Vector (AV)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_attack_complexity', label: 'CVSS3 Attack Complexity (AC)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_privileges_required', label: 'CVSS3 Privileges Required (PR)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_user_interaction', label: 'CVSS3 User interaction (UI)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_scope', label: 'CVSS3 Scope (S)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_confidentiality_impact', label: 'CVSS3 Confidentiality Impact (C)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_integrity_impact', label: 'CVSS3 Integrity Impact (I)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_availability_impact', label: 'CVSS3 Availability Impact (A)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_exploit_code_maturity', label: 'CVSS3 Exploit Code Maturity (E)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_remediation_level', label: 'CVSS3 Remediation Level (RL)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_report_confidence', label: 'CVSS3 Report Confidence (RC)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_temporal_score', label: 'CVSS3 Temporal Score', type: 'numeric', precision: 'float', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    // CVSS 2
+    { name: 'x_opencti_cvss_v2_vector_string', label: 'CVSS2 Vector', type: 'string', format: 'short', mandatoryType: 'no', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v2_base_score', label: 'CVSS2 Score', type: 'numeric', precision: 'float', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v2_access_vector', label: 'CVSS2 Access Vector (AV)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v2_access_complexity', label: 'CVSS2 Access Complexity (AC)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v2_authentication', label: 'CVSS2 Authentication (Au)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v2_confidentiality_impact', label: 'CVSS2 Confidentiality Impact (C)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v2_integrity_impact', label: 'CVSS2 Integrity Impact (I)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v2_availability_impact', label: 'CVSS2 Availability Impact (A)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v2_exploitability', label: 'CVSS2 Exploitability (E)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v2_remediation_level', label: 'CVSS2 Remediation Level (RL)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v2_report_confidence', label: 'CVSS2 Report Confidence (RC)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v2_temporal_score', label: 'CVSS2 Temporal Score', type: 'numeric', precision: 'float', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    // CVSS 4
+    { name: 'x_opencti_cvss_v4_vector_string', label: 'CVSS4 Vector', type: 'string', format: 'short', mandatoryType: 'no', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v4_base_score', label: 'CVSS4 Score', type: 'numeric', precision: 'float', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v4_base_severity', label: 'CVSS4 Severity', type: 'string', format: 'enum', values: CVSS_SEVERITY_VALUES, mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v4_attack_vector', label: 'CVSS4 Attack Vector (AV)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v4_attack_complexity', label: 'CVSS4 Attack Complexity (AC)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v4_attack_requirements', label: 'CVSS4 Attack Requirements (AT)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v4_privileges_required', label: 'CVSS4 Privileges Required (PR)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v4_user_interaction', label: 'CVSS4 User Interaction (UI)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v4_confidentiality_impact_v', label: 'CVSS4 VS Confidentiality Impact (VC)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v4_confidentiality_impact_s', label: 'CVSS4 SS Confidentiality Impact (SC)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v4_integrity_impact_v', label: 'CVSS4 VS Integrity Impact (VI)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v4_integrity_impact_s', label: 'CVSS4 SS Integrity Impact (SI)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v4_availability_impact_v', label: 'CVSS4 VS Availability Impact (VA)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v4_availability_impact_s', label: 'CVSS4 SS Avalability Impact (SA)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cvss_v4_exploit_maturity', label: 'CVSS4 Exploit Maturity (E)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    // Others
+    { name: 'x_opencti_cwe', label: 'Associated CWE(s)', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: true, upsert: true, isFilterable: true },
+    { name: 'x_opencti_cisa_kev', label: 'CISA KEV', type: 'boolean', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_epss_score', label: 'EPSS Score', type: 'numeric', precision: 'float', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_epss_percentile', label: 'EPSS Percentile', type: 'numeric', precision: 'float', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_score', label: 'Score', type: 'numeric', precision: 'integer', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'x_opencti_first_seen_active', label: 'First seen active', type: 'date', mandatoryType: 'no', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+  ],
+
+  [ENTITY_TYPE_INCIDENT]: [
+    // Check Name, type, mandatory, multiple, upsert
+    iAliasedIds,
+    aliases,
+    { name: 'name', label: 'Name', type: 'string', format: 'short', mandatoryType: 'external', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'description', label: 'Description', type: 'string', format: 'text', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'incident_type', label: 'Incident type', type: 'string', format: 'vocabulary', vocabularyCategory: 'incident_type_ov', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'severity', label: 'Severity', type: 'string', format: 'vocabulary', vocabularyCategory: 'incident_severity_ov', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'source', label: 'Source', type: 'string', format: 'short', mandatoryType: 'customizable', editDefault: true, multiple: false, upsert: true, isFilterable: true },
+    { name: 'first_seen', label: 'First seen', type: 'date', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'last_seen', label: 'Last seen', type: 'date', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+    { name: 'objective', label: 'Objective', type: 'string', format: 'short', mandatoryType: 'no', editDefault: false, multiple: false, upsert: true, isFilterable: true },
+  ],
+};
+R.forEachObjIndexed((value, key) => schemaAttributesDefinition.registerAttributes(key as string, value), stixDomainObjectsAttributes);

@@ -1,0 +1,33 @@
+- generic [ref=e2]:
+  - navigation [ref=e3]:
+    - generic [ref=e4]: I
+    - button "◷" [ref=e5] [cursor=pointer]
+    - button "◉" [ref=e6] [cursor=pointer]
+    - button "✓" [ref=e7] [cursor=pointer]
+    - button "⊟" [ref=e8] [cursor=pointer]
+    - button "≡" [ref=e9] [cursor=pointer]
+    - button "◈" [ref=e11] [cursor=pointer]
+  - generic [ref=e12]:
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e16]: Indago
+        - generic [ref=e17]: ● live
+      - generic [ref=e18]:
+        - generic [ref=e19]: 6 entities
+        - generic [ref=e20]: 2 claims
+        - generic [ref=e21]: 2 evidence
+        - generic [ref=e22]: 1 agents
+    - generic [ref=e24]:
+      - generic [ref=e25]:
+        - heading "Activity" [level=2] [ref=e26]
+        - generic [ref=e27]: live bus feed
+      - generic [ref=e28]:
+        - generic [ref=e29]:
+          - generic [ref=e30]: 10:32:22
+          - generic [ref=e32]: claim c1 promoted to Corroborated
+        - generic [ref=e33]:
+          - generic [ref=e34]: 10:32:22
+          - generic [ref=e36]: Corporate Registry agent returned 3 entities
+        - generic [ref=e37]:
+          - generic [ref=e38]: 10:32:22
+          - generic [ref=e40]: Session started

@@ -1,0 +1,16 @@
+[package]
+name = "indago-collect-favicon"
+description = "Indago favicon collector — mechanism-only. Computes the Shodan-style mmh3 favicon hash for cross-host pivoting; freezes the favicon and emits the hash as a claim."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+indago-core = { workspace = true }
+indago-protocol = { workspace = true }
+indago-bus = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+reqwest = { workspace = true }
+base64 = "0.22"
+murmur3 = "0.5"
