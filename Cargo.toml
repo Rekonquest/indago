@@ -46,7 +46,7 @@ exclude = [
 [workspace.package]
 edition = "2021"
 version = "0.1.0"
-license = "MIT"
+license = "PolyForm-Noncommercial-1.0.0"
 
 [workspace.dependencies]
 # Shared third-party deps — versions mirror C:\projects\aedes-runtime where they overlap.
