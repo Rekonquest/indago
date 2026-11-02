@@ -62,7 +62,7 @@ chrono = { version = "0.4", features = ["serde"] }
 parking_lot = "0.12"
 sha2 = "0.10"
 rusqlite = { version = "0.37", features = ["bundled"] }   # aligned with Servo's rusqlite so libsqlite3-sys unifies (single sqlite3 link)
-hickory-resolver = "0.24"
+hickory-resolver = "0.26"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json"] }
 regex = "1"
 email_address = "0.2"
